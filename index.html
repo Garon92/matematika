@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Matematika</title>
+  <style>
+    :root { color-scheme: light; }
+    * { box-sizing: border-box; }
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: #000000;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+      color: #e5e7eb;
+    }
+    .wrap {
+      min-height: 100%;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+    .menu {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+      gap: 16px;
+      width: min(92vw, 680px);
+    }
+    .tile {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 120px;
+      border: 1px solid #ffffff;
+      border-radius: 12px;
+      text-decoration: none;
+      font-size: 64px;
+      line-height: 1;
+      color: #ffd400;
+      transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+      box-shadow: 0 2px 8px rgba(16,24,40,0.20);
+      background: rgba(255,255,255,0.02);
+    }
+    .tile:focus, .tile:hover {
+      transform: translateY(-2px);
+      border-color: #ffd400;
+      box-shadow: 0 4px 16px rgba(255,212,0,0.20);
+      outline: none;
+    }
+    .label {
+      position: absolute;
+      left: -9999px;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+    }
+  </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <nav class="menu" aria-label="Menu Matematika">
+        <a class="tile" href="hvezdy.html" aria-label="Počítadlo hvězd" title="Počítadlo hvězd">★</a>
+      </nav>
+    </div>
+  </body>
+  </html>
+
+

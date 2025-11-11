@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Matematika — Počítadlo hvězd</title>
+  <style>
+    :root {
+      color-scheme: light;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: #000000;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    }
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 0 16px;
+      color: #e5e7eb;
+    }
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 16px;
+      width: min(90vw, 1000px);
+    }
+    .controls input[type="number"] {
+      width: 220px;
+      padding: 8px 10px;
+      font-size: 16px;
+      border: 1px solid #c9ced6;
+      border-radius: 8px;
+      outline: none;
+    }
+    .controls input[type="number"]:focus {
+      border-color: #ffd400;
+      box-shadow: 0 0 0 3px rgba(255, 212, 0, 0.2);
+    }
+    .box {
+      width: 90vw;
+      height: 90vh;
+      background: #000000;
+      border: 1px solid #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(16,24,40,0.06);
+      overflow: hidden;
+      position: relative;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    .note {
+      font-size: 12px;
+      color: #6b7280;
+    }
+  </style>
+  </head>
+  <body>
+    <div class="controls">
+      <label for="count">Počet hvězd:</label>
+      <input id="count" type="number" min="0" max="10000000" step="1" placeholder="např. 500" inputmode="numeric" />
+      <span class="note">Hvězdy se vykreslí automaticky.</span>
+    </div>
+  
+    <div id="box" class="box">
+      <canvas id="canvas2d" aria-label="Plátno 2D s náhodnými hvězdami"></canvas>
+      <canvas id="canvasGL" aria-label="Plátno WebGL s náhodnými hvězdami" style="display:none"></canvas>
+    </div>
+  
+    <script>
+      (function () {
+        const input = document.getElementById('count');
+        const box = document.getElementById('box');
+        const canvas2d = document.getElementById('canvas2d');
+        const canvasGL = document.getElementById('canvasGL');
+
+        const DOT_RADIUS = 1.8; // v CSS pixelech
+        const GL_THRESHOLD = 100000; // nad tímto počtem použij WebGL2
+        const MAX_DOTS = 10000000; // horní limit: 10 milionů
+
+        // 2D context
+        let ctx2d = null;
+
+        // WebGL2 state
+        let gl = null;
+        let glProgram = null;
+        let glUniforms = null;
+        let glVAO = null;
+
+        // Seed pro relaci: deterministické rozložení v rámci jedné relace, jiné po reloadu
+        const sessionSeed = (() => {
+          try {
+            const arr = new Uint32Array(1);
+            (crypto || window.crypto).getRandomValues(arr);
+            return arr[0] >>> 0;
+          } catch (_) {
+            return ((Date.now() ^ Math.floor(Math.random() * 0xffffffff)) >>> 0);
+          }
+        })();
+
+        function getBoxSize() {
+          const rect = box.getBoundingClientRect();
+          return { width: rect.width, height: rect.height };
+        }
+
+        function getDpr() {
+          return window.devicePixelRatio || 1;
+        }
+
+        // ----- 2D Canvas -----
+        function ensure2D() {
+          if (!ctx2d) {
+            ctx2d = canvas2d.getContext('2d', { alpha: true, desynchronized: true });
+          }
+        }
+
+        function resizeCanvas2D() {
+          const { width, height } = getBoxSize();
+          const dpr = getDpr();
+          const w = Math.floor(width * dpr);
+          const h = Math.floor(height * dpr);
+          if (canvas2d.width !== w || canvas2d.height !== h) {
+            canvas2d.width = w;
+            canvas2d.height = h;
+          }
+          ensure2D();
+          ctx2d.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+
+        // jednoduchý xorshift32 pro deterministické "náhodné" hodnoty
+        function xorshift32(x) {
+          x = (x ^ (x << 13)) >>> 0;
+          x = (x ^ (x >>> 17)) >>> 0;
+          x = (x ^ (x << 5)) >>> 0;
+          return x >>> 0;
+        }
+
+        function drawDots2D(rawCount) {
+          let count = Math.max(0, Math.floor(Number(rawCount) || 0));
+          if (count > MAX_DOTS) count = MAX_DOTS;
+          resizeCanvas2D();
+
+          // clear
+          ctx2d.clearRect(0, 0, canvas2d.width, canvas2d.height);
+
+          const { width, height } = getBoxSize();
+          const r = DOT_RADIUS;
+          const rInner = r * 0.5;
+          const minX = r;
+          const maxX = width - r;
+          const minY = r;
+          const maxY = height - r;
+
+          ctx2d.fillStyle = '#ffd400';
+          ctx2d.beginPath();
+          for (let i = 0; i < count; i++) {
+            const rx = xorshift32(((i * 1664525 + 1013904223 + sessionSeed) >>> 0)) / 4294967295;
+            const ry = xorshift32(((i * 22695477 + 1 + ((sessionSeed * 3) >>> 0)) >>> 0)) / 4294967295;
+            const x = minX + rx * (maxX - minX);
+            const y = minY + ry * (maxY - minY);
+            // nakresli 5-cípou hvězdu (10 vrcholů: 5 vnějších, 5 vnitřních)
+            let angle = -Math.PI / 2;
+            const step = Math.PI / 5; // 36°
+            ctx2d.moveTo(x + Math.cos(angle) * r, y + Math.sin(angle) * r);
+            for (let k = 0; k < 5; k++) {
+              angle += step;
+              ctx2d.lineTo(x + Math.cos(angle) * rInner, y + Math.sin(angle) * rInner);
+              angle += step;
+              ctx2d.lineTo(x + Math.cos(angle) * r, y + Math.sin(angle) * r);
+            }
+          }
+          ctx2d.fill();
+        }
+
+        // ----- WebGL2 -----
+        function compileShader(gl, type, source) {
+          const sh = gl.createShader(type);
+          gl.shaderSource(sh, source);
+          gl.compileShader(sh);
+          if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
+            const info = gl.getShaderInfoLog(sh);
+            gl.deleteShader(sh);
+            throw new Error('Shader compile error: ' + info);
+          }
+          return sh;
+        }
+
+        function initGL() {
+          if (glProgram) return true;
+          gl = canvasGL.getContext('webgl2', { antialias: false, preserveDrawingBuffer: true });
+          if (!gl) return false;
+
+          const vsSource = `#version 300 es
+          precision highp float;
+          precision highp int;
+          uniform vec2 uResolutionPx;
+          uniform float uPointSizePx;
+          uniform uint uSeed;
+          float rand(uint x){
+            x ^= x << 13;
+            x ^= x >> 17;
+            x ^= x << 5;
+            return float(x) / 4294967295.0;
+          }
+          void main(){
+            uint i = uint(gl_VertexID);
+            float rx = rand(i * 1664525u + 1013904223u + uSeed);
+            float ry = rand(i * 22695477u + 1u + uSeed * 3u);
+            vec2 uv = vec2(rx, ry);
+            vec2 margin = vec2(
+              uPointSizePx / (2.0 * uResolutionPx.x),
+              uPointSizePx / (2.0 * uResolutionPx.y)
+            );
+            uv = clamp(uv, margin, vec2(1.0) - margin);
+            vec2 posNdc = vec2(
+              uv.x * 2.0 - 1.0,
+              (1.0 - uv.y) * 2.0 - 1.0
+            );
+            gl_Position = vec4(posNdc, 0.0, 1.0);
+            gl_PointSize = uPointSizePx;
+          }`;
+
+          const fsSource = `#version 300 es
+          precision highp float;
+          out vec4 outColor;
+          void main(){
+            vec2 p = gl_PointCoord - vec2(0.5);
+            float r = length(p);
+            // aproximace hvězdy pomocí radiální funkce
+            float a = atan(p.y, p.x);
+            float spikes = 5.0;
+            float t = abs(cos(a * spikes));
+            float inner = 0.25; // vnitřní poloměr (v měřítku 0..0.5)
+            float outer = 0.5;  // vnější poloměr
+            float threshold = mix(inner, outer, pow(t, 6.0));
+            if (r > threshold) { discard; }
+            outColor = vec4(1.0, 0.83, 0.0, 1.0);
+          }`;
+
+          const vs = compileShader(gl, gl.VERTEX_SHADER, vsSource);
+          const fs = compileShader(gl, gl.FRAGMENT_SHADER, fsSource);
+          const program = gl.createProgram();
+          gl.attachShader(program, vs);
+          gl.attachShader(program, fs);
+          gl.linkProgram(program);
+          if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+            const info = gl.getProgramInfoLog(program);
+            gl.deleteShader(vs);
+            gl.deleteShader(fs);
+            gl.deleteProgram(program);
+            throw new Error('Program link error: ' + info);
+          }
+          gl.deleteShader(vs);
+          gl.deleteShader(fs);
+          glProgram = program;
+          gl.useProgram(glProgram);
+
+          glUniforms = {
+            uResolutionPx: gl.getUniformLocation(glProgram, 'uResolutionPx'),
+            uPointSizePx: gl.getUniformLocation(glProgram, 'uPointSizePx'),
+            uSeed: gl.getUniformLocation(glProgram, 'uSeed')
+          };
+
+          glVAO = gl.createVertexArray();
+          gl.bindVertexArray(glVAO);
+
+          gl.clearColor(0.0, 0.0, 0.0, 1.0);
+          gl.enable(gl.BLEND);
+          gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+          return true;
+        }
+
+        function resizeCanvasGL() {
+          if (!gl && !initGL()) return;
+          const { width, height } = getBoxSize();
+          const dpr = getDpr();
+          const w = Math.floor(width * dpr);
+          const h = Math.floor(height * dpr);
+          if (canvasGL.width !== w || canvasGL.height !== h) {
+            canvasGL.width = w;
+            canvasGL.height = h;
+          }
+          gl.viewport(0, 0, w, h);
+        }
+
+        function drawDotsGL(rawCount) {
+          let count = Math.max(0, Math.floor(Number(rawCount) || 0));
+          if (count > MAX_DOTS) count = MAX_DOTS;
+          if (!initGL()) {
+            // fallback
+            drawDots2D(count);
+            return;
+          }
+          resizeCanvasGL();
+          const { width, height } = getBoxSize();
+          const dpr = getDpr();
+          gl.useProgram(glProgram);
+          gl.uniform2f(glUniforms.uResolutionPx, width * dpr, height * dpr);
+          gl.uniform1f(glUniforms.uPointSizePx, DOT_RADIUS * 2 * dpr);
+          gl.uniform1ui(glUniforms.uSeed, sessionSeed >>> 0);
+          gl.clear(gl.COLOR_BUFFER_BIT);
+          gl.drawArrays(gl.POINTS, 0, count);
+        }
+
+        function setMode(useGL) {
+          if (useGL) {
+            canvasGL.style.display = 'block';
+            canvas2d.style.display = 'none';
+          } else {
+            canvasGL.style.display = 'none';
+            canvas2d.style.display = 'block';
+          }
+        }
+
+        let rafId = null;
+        function scheduleDraw() {
+          if (rafId != null) cancelAnimationFrame(rafId);
+          rafId = requestAnimationFrame(() => {
+            rafId = null;
+            let count = Math.max(0, Math.floor(Number(input.value) || 0));
+            if (count > MAX_DOTS) count = MAX_DOTS;
+            if (count > GL_THRESHOLD && initGL()) {
+              setMode(true);
+              drawDotsGL(count);
+            } else {
+              setMode(false);
+              drawDots2D(count);
+            }
+          });
+        }
+
+        input.addEventListener('input', scheduleDraw);
+        window.addEventListener('resize', scheduleDraw);
+        
+        function handleWheel(e) {
+          const direction = e.deltaY < 0 ? 1 : (e.deltaY > 0 ? -1 : 0);
+          if (!direction) return;
+          let step = 1;
+          if (e.shiftKey) step = 1000;
+          else if (e.ctrlKey || e.metaKey) step = 100;
+          else if (e.altKey) step = 10;
+          let current = Math.max(0, Math.floor(Number(input.value) || 0));
+          let next = current + direction * step;
+          if (next > MAX_DOTS) next = MAX_DOTS;
+          if (next < 0) next = 0;
+          if (next !== current) {
+            input.value = String(next);
+            scheduleDraw();
+          }
+        }
+        window.addEventListener('wheel', handleWheel, { passive: true });
+
+        // inicializace
+        input.value = '0';
+        scheduleDraw();
+      })();
+    </script>
+  </body>
+  </html>
+
+
