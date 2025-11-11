@@ -14,6 +14,19 @@
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
       color: #e5e7eb;
     }
+    .top {
+      width: min(92vw, 1000px);
+      margin: 0 auto;
+      display: flex;
+      justify-content: flex-start;
+      padding: 8px 16px 0;
+    }
+    .top a {
+      color: #cbd5e1;
+      text-decoration: none;
+      font-size: 14px;
+    }
+    .top a:hover { color: #ffffff; text-decoration: underline; }
     .controls {
       display: flex;
       flex-wrap: wrap;
@@ -162,6 +175,9 @@
   </style>
   </head>
   <body>
+    <div class="top">
+      <a href="index.html">← Menu</a>
+    </div>
     <div class="controls">
       <div class="group">
         <span>Režim:</span>
@@ -177,7 +193,6 @@
         <label for="max">Rozsah: <span id="rangeLabel">0–10</span></label>
         <input id="max" type="range" min="5" max="100" step="5" value="10" />
       </div>
-      <a class="menu-link" href="index.html">← Menu</a>
     </div>
     <div class="box">
       <div class="problem" id="problem">

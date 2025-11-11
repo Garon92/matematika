@@ -23,6 +23,18 @@
       padding: 12px 0 16px;
       color: #e5e7eb;
     }
+    .top {
+      width: min(90vw, 1000px);
+      display: flex;
+      justify-content: flex-start;
+      padding: 0 0 4px;
+    }
+    .top a {
+      color: #cbd5e1;
+      text-decoration: none;
+      font-size: 14px;
+    }
+    .top a:hover { color: #ffffff; text-decoration: underline; }
     .controls {
       display: flex;
       align-items: center;
@@ -64,6 +76,9 @@
   </style>
   </head>
   <body>
+    <div class="top">
+      <a href="index.html">← Menu</a>
+    </div>
     <div class="controls">
       <label for="count">Počet hvězd:</label>
       <input id="count" type="number" min="0" max="10000000" step="1" placeholder="např. 500" inputmode="numeric" />

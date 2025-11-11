@@ -23,7 +23,7 @@
       display: flex;
       align-items: center;
       gap: 12px;
-      justify-content: space-between;
+      justify-content: flex-start;
     }
     .top a {
       color: #cbd5e1;
@@ -31,6 +31,44 @@
       font-size: 14px;
     }
     .top a:hover { color: #ffffff; text-decoration: underline; }
+
+    .inputs {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .inputs .group {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid #ffffff;
+      border-radius: 10px;
+      padding: 6px 10px;
+    }
+    .inputs label {
+      font-size: 12px;
+      color: #cbd5e1;
+    }
+    .inputs input[type="number"] {
+      width: 140px;
+      padding: 6px 8px;
+      font-size: 14px;
+      text-align: center;
+      border-radius: 8px;
+      border: 1px solid #c9ced6;
+      outline: none;
+      background: #0b0b0b;
+      color: #ffffff;
+    }
+    .inputs input[type="number"]:focus {
+      border-color: #ffd400;
+      box-shadow: 0 0 0 3px rgba(255, 212, 0, 0.2);
+    }
+    .inputs .result {
+      color: #ffd400;
+    }
 
     .layout {
       display: grid;
@@ -96,6 +134,7 @@
     }
     .seg {
       display: inline-flex;
+      flex-direction: column;
       border: 1px solid #ffffff;
       border-radius: 10px;
       overflow: hidden;
@@ -127,15 +166,24 @@
   <body>
     <div class="wrap">
       <div class="top">
-        <div></div>
         <a href="index.html">← Menu</a>
+      </div>
+      <div class="inputs">
+        <div class="group">
+          <label for="inputA">Číslo A</label>
+          <input id="inputA" type="number" min="0" max="10000000" step="1" value="0" inputmode="numeric" />
+        </div>
+        <div class="group">
+          <label for="inputB">Číslo B</label>
+          <input id="inputB" type="number" min="0" max="10000000" step="1" value="0" inputmode="numeric" />
+        </div>
+        <div class="group result">
+          <label>Výsledek</label>
+          <output id="resultNum">0</output>
+        </div>
       </div>
       <div class="layout">
         <div class="col box" id="boxA">
-          <div class="box-header">
-            <label for="inputA">Číslo A</label>
-            <input id="inputA" type="number" min="0" max="10000000" step="1" value="0" inputmode="numeric" />
-          </div>
           <canvas id="a2d"></canvas>
           <canvas id="aGL" style="display:none"></canvas>
         </div>
@@ -148,15 +196,15 @@
           </div>
         </div>
         <div class="col box" id="boxB">
-          <div class="box-header">
-            <label for="inputB">Číslo B</label>
-            <input id="inputB" type="number" min="0" max="10000000" step="1" value="0" inputmode="numeric" />
-          </div>
           <canvas id="b2d"></canvas>
           <canvas id="bGL" style="display:none"></canvas>
         </div>
         <div class="col eq">=</div>
         <div class="col box" id="boxC">
+          <div class="box-header">
+            <label>Výsledek</label>
+            <span id="resultNumC">0</span>
+          </div>
           <canvas id="c2d"></canvas>
           <canvas id="cGL" style="display:none"></canvas>
         </div>
@@ -402,6 +450,8 @@
         const inputA = document.getElementById('inputA');
         const inputB = document.getElementById('inputB');
         const opButtons = Array.from(document.querySelectorAll('.seg button'));
+        const resultNum = document.getElementById('resultNum');
+        const resultNumC = document.getElementById('resultNumC');
 
         const boxA = new StarBox(boxAEl, 101);
         const boxB = new StarBox(boxBEl, 202);
@@ -424,7 +474,10 @@
         function syncResult() {
           const a = boxA.getCount();
           const b = boxB.getCount();
-          boxC.setCount(computeResult(a, b, op), true);
+          const r = computeResult(a, b, op);
+          boxC.setCount(r, true);
+          if (resultNum) resultNum.textContent = String(r);
+          if (resultNumC) resultNumC.textContent = String(r);
         }
 
         function scheduleAll() {
