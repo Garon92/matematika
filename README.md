@@ -2,14 +2,8 @@
 
 Jednoduché statické stránky:
 
-- `index.html` – hlavní menu (dlaždice „+“ pro příklady, „★“ pro hvězdy)
+- `index.html` – hlavní menu: „+“ (příklady), „★“ (hvězdy), „★+★“ (hvězda + hvězda)
 - `pocitadlo.html` – trénink příkladů (+, −, ×, ÷, mix), rozsah, skóre, Enter/Esc, konfety
-- `hvezdy.html` – vizualizace žlutých hvězd (WebGL/2D), limit 10M, kolečko myši mění počet
-
-## GitHub Pages (ruční nastavení)
-1) GitHub → repo → Settings → Pages
-2) Build and deployment → Deployment source: „Deploy from a branch“
-3) Branch: `main` a složka `/` (root), uložit
-4) Po nasazení adresa bude `https://<tvůj-uživatel>.github.io/matematika/`
-
+- `hvezdy.html` – vizualizace žlutých hvězd (WebGL/2D), limit 10M, deterministický seed na reload, kolečko mění počet
+- `hvezdy-pocitadlo.html` – tři boxy (A op B = C), volba operace (+, −, ×, ÷), scroll mění jen aktivní box, vstupy nad A a B, výsledek v C
 
