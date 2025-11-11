@@ -1,0 +1,481 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Matematika — Hvězdy počitadlo</title>
+  <style>
+    :root { color-scheme: light; }
+    * { box-sizing: border-box; }
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: #000000;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+      color: #e5e7eb;
+    }
+    .wrap {
+      display: grid;
+      gap: 16px;
+      padding: 16px;
+    }
+    .top {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      justify-content: space-between;
+    }
+    .top a {
+      color: #cbd5e1;
+      text-decoration: none;
+      font-size: 14px;
+    }
+    .top a:hover { color: #ffffff; text-decoration: underline; }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr auto 1fr;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+    }
+    .box {
+      position: relative;
+      height: min(74vh, 62vw);
+      min-height: 280px;
+      background: #000000;
+      border: 1px solid #ffffff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(16,24,40,0.20);
+    }
+    .box canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    .box-header {
+      position: absolute;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(0,0,0,0.5);
+      border: 1px solid #ffffff;
+      border-radius: 999px;
+      padding: 6px 10px;
+      backdrop-filter: blur(4px);
+    }
+    .box-header label {
+      font-size: 12px;
+      color: #cbd5e1;
+    }
+    .box-header input[type="number"] {
+      width: 120px;
+      padding: 6px 8px;
+      font-size: 14px;
+      text-align: center;
+      border-radius: 8px;
+      border: 1px solid #c9ced6;
+      outline: none;
+      background: #0b0b0b;
+      color: #ffffff;
+    }
+    .box-header input[type="number"]:focus {
+      border-color: #ffd400;
+      box-shadow: 0 0 0 3px rgba(255, 212, 0, 0.2);
+    }
+    .op {
+      display: grid;
+      gap: 8px;
+      place-items: center;
+      padding: 0 6px;
+      height: 100%;
+    }
+    .seg {
+      display: inline-flex;
+      border: 1px solid #ffffff;
+      border-radius: 10px;
+      overflow: hidden;
+      background: rgba(255,255,255,0.02);
+    }
+    .seg button {
+      appearance: none;
+      background: transparent;
+      color: #ffd400;
+      border: 0;
+      padding: 8px 12px;
+      font-size: 18px;
+      cursor: pointer;
+    }
+    .seg button.active {
+      background: rgba(255, 212, 0, 0.12);
+      color: #ffffff;
+    }
+    .eq {
+      display: grid;
+      place-items: center;
+      height: 100%;
+      color: #ffd400;
+      font-size: clamp(24px, 6vw, 42px);
+      padding: 0 8px;
+    }
+  </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="top">
+        <div></div>
+        <a href="index.html">← Menu</a>
+      </div>
+      <div class="layout">
+        <div class="col box" id="boxA">
+          <div class="box-header">
+            <label for="inputA">Číslo A</label>
+            <input id="inputA" type="number" min="0" max="10000000" step="1" value="0" inputmode="numeric" />
+          </div>
+          <canvas id="a2d"></canvas>
+          <canvas id="aGL" style="display:none"></canvas>
+        </div>
+        <div class="col op">
+          <div class="seg" role="tablist" aria-label="Operace">
+            <button class="active" data-op="plus" aria-selected="true">+</button>
+            <button data-op="minus">−</button>
+            <button data-op="times">×</button>
+            <button data-op="divide">÷</button>
+          </div>
+        </div>
+        <div class="col box" id="boxB">
+          <div class="box-header">
+            <label for="inputB">Číslo B</label>
+            <input id="inputB" type="number" min="0" max="10000000" step="1" value="0" inputmode="numeric" />
+          </div>
+          <canvas id="b2d"></canvas>
+          <canvas id="bGL" style="display:none"></canvas>
+        </div>
+        <div class="col eq">=</div>
+        <div class="col box" id="boxC">
+          <canvas id="c2d"></canvas>
+          <canvas id="cGL" style="display:none"></canvas>
+        </div>
+      </div>
+    </div>
+    <script>
+      (function () {
+        // Konstanty a barvy přesně jako ve hvezdy.html
+        const DOT_RADIUS = 1.8;
+        const GL_THRESHOLD = 100000;
+        const MAX_DOTS = 10000000;
+        const STAR_COLOR = '#ffd400';
+        const BG_COLOR = '#000000';
+
+        // Relace seed – deterministické v rámci reloadu, jiné po reloadu
+        const sessionSeed = (() => {
+          try {
+            const arr = new Uint32Array(1);
+            (crypto || window.crypto).getRandomValues(arr);
+            return arr[0] >>> 0;
+          } catch (_) {
+            return ((Date.now() ^ Math.floor(Math.random() * 0xffffffff)) >>> 0);
+          }
+        })();
+
+        // Pomocné
+        function getDpr() { return window.devicePixelRatio || 1; }
+        function xorshift32(x) {
+          x = (x ^ (x << 13)) >>> 0;
+          x = (x ^ (x >>> 17)) >>> 0;
+          x = (x ^ (x << 5)) >>> 0;
+          return x >>> 0;
+        }
+        function clampCount(n) {
+          n = Math.max(0, Math.floor(Number(n) || 0));
+          return n > MAX_DOTS ? MAX_DOTS : n;
+        }
+
+        // Třída rendereru pro jednotlivý box
+        class StarBox {
+          constructor(rootEl, seedOffset) {
+            this.root = rootEl;
+            this.canvas2d = this.root.querySelector('canvas:nth-of-type(1)');
+            this.canvasGL = this.root.querySelector('canvas:nth-of-type(2)');
+            this.ctx2d = null;
+            this.gl = null;
+            this.glProgram = null;
+            this.glUniforms = null;
+            this.count = 0;
+            this.seedOffset = seedOffset >>> 0;
+            this._initEvents();
+          }
+          _initEvents() {
+            this.root.addEventListener('wheel', (e) => {
+              const direction = e.deltaY < 0 ? 1 : (e.deltaY > 0 ? -1 : 0);
+              if (!direction) return;
+              let step = 1;
+              if (e.shiftKey) step = 1000;
+              else if (e.ctrlKey || e.metaKey) step = 100;
+              else if (e.altKey) step = 10;
+              this.setCount(this.count + direction * step, true);
+            }, { passive: true });
+          }
+          setCount(n, redraw = true) {
+            this.count = clampCount(n);
+            if (redraw) this.draw();
+          }
+          getCount() { return this.count; }
+          getSize() {
+            const r = this.root.getBoundingClientRect();
+            return { width: r.width, height: r.height };
+          }
+          ensure2D() {
+            if (!this.ctx2d) {
+              this.ctx2d = this.canvas2d.getContext('2d', { alpha: true, desynchronized: true });
+            }
+          }
+          resize2D() {
+            const { width, height } = this.getSize();
+            const dpr = getDpr();
+            const w = Math.floor(width * dpr);
+            const h = Math.floor(height * dpr);
+            if (this.canvas2d.width !== w || this.canvas2d.height !== h) {
+              this.canvas2d.width = w;
+              this.canvas2d.height = h;
+            }
+            this.ensure2D();
+            this.ctx2d.setTransform(dpr, 0, 0, dpr, 0, 0);
+          }
+          draw2D() {
+            this.resize2D();
+            const ctx = this.ctx2d;
+            ctx.clearRect(0, 0, this.canvas2d.width, this.canvas2d.height);
+            const { width, height } = this.getSize();
+            const r = DOT_RADIUS;
+            const rInner = r * 0.5;
+            const minX = r, maxX = width - r;
+            const minY = r, maxY = height - r;
+            ctx.fillStyle = STAR_COLOR;
+            for (let i = 0; i < this.count; i++) {
+              const rx = xorshift32(((i * 1664525 + 1013904223 + sessionSeed + this.seedOffset) >>> 0)) / 4294967295;
+              const ry = xorshift32(((i * 22695477 + 1 + ((sessionSeed * 3 + this.seedOffset) >>> 0)) >>> 0)) / 4294967295;
+              const x = minX + rx * (maxX - minX);
+              const y = minY + ry * (maxY - minY);
+              // hvězda
+              let a = -Math.PI / 2;
+              const step = Math.PI / 5;
+              ctx.beginPath();
+              ctx.moveTo(x + Math.cos(a) * r, y + Math.sin(a) * r);
+              for (let k = 0; k < 5; k++) {
+                a += step; ctx.lineTo(x + Math.cos(a) * rInner, y + Math.sin(a) * rInner);
+                a += step; ctx.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r);
+              }
+              ctx.fill();
+            }
+          }
+          compileShader(gl, type, source) {
+            const sh = gl.createShader(type);
+            gl.shaderSource(sh, source);
+            gl.compileShader(sh);
+            if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
+              const info = gl.getShaderInfoLog(sh);
+              gl.deleteShader(sh);
+              throw new Error('Shader compile error: ' + info);
+            }
+            return sh;
+          }
+          initGL() {
+            if (this.glProgram) return true;
+            this.gl = this.canvasGL.getContext('webgl2', { antialias: false, preserveDrawingBuffer: true });
+            if (!this.gl) return false;
+            const gl = this.gl;
+            const vsSource = `#version 300 es
+            precision highp float;
+            precision highp int;
+            uniform vec2 uResolutionPx;
+            uniform float uPointSizePx;
+            uniform uint uSeed;
+            float rand(uint x){
+              x ^= x << 13u;
+              x ^= x >> 17u;
+              x ^= x << 5u;
+              return float(x) / 4294967295.0;
+            }
+            void main(){
+              uint i = uint(gl_VertexID);
+              float rx = rand(i * 1664525u + 1013904223u + uSeed);
+              float ry = rand(i * 22695477u + 1u + uSeed * 3u);
+              vec2 uv = vec2(rx, ry);
+              vec2 margin = vec2(
+                uPointSizePx / (2.0 * uResolutionPx.x),
+                uPointSizePx / (2.0 * uResolutionPx.y)
+              );
+              uv = clamp(uv, margin, vec2(1.0) - margin);
+              vec2 posNdc = vec2(
+                uv.x * 2.0 - 1.0,
+                (1.0 - uv.y) * 2.0 - 1.0
+              );
+              gl_Position = vec4(posNdc, 0.0, 1.0);
+              gl_PointSize = uPointSizePx;
+            }`;
+            const fsSource = `#version 300 es
+            precision highp float;
+            out vec4 outColor;
+            void main(){
+              vec2 p = gl_PointCoord - vec2(0.5);
+              float r = length(p);
+              float a = atan(p.y, p.x);
+              float spikes = 5.0;
+              float t = abs(cos(a * spikes));
+              float inner = 0.25;
+              float outer = 0.5;
+              float threshold = mix(inner, outer, pow(t, 6.0));
+              if (r > threshold) { discard; }
+              outColor = vec4(1.0, 0.83, 0.0, 1.0);
+            }`;
+            const vs = this.compileShader(gl, gl.VERTEX_SHADER, vsSource);
+            const fs = this.compileShader(gl, gl.FRAGMENT_SHADER, fsSource);
+            const program = gl.createProgram();
+            gl.attachShader(program, vs);
+            gl.attachShader(program, fs);
+            gl.linkProgram(program);
+            if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+              const info = gl.getProgramInfoLog(program);
+              gl.deleteShader(vs); gl.deleteShader(fs); gl.deleteProgram(program);
+              throw new Error('Program link error: ' + info);
+            }
+            gl.deleteShader(vs); gl.deleteShader(fs);
+            this.glProgram = program;
+            gl.useProgram(this.glProgram);
+            this.glUniforms = {
+              uResolutionPx: gl.getUniformLocation(this.glProgram, 'uResolutionPx'),
+              uPointSizePx: gl.getUniformLocation(this.glProgram, 'uPointSizePx'),
+              uSeed: gl.getUniformLocation(this.glProgram, 'uSeed')
+            };
+            gl.clearColor(0.0, 0.0, 0.0, 1.0);
+            gl.enable(gl.BLEND);
+            gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+            return true;
+          }
+          resizeGL() {
+            if (!this.gl && !this.initGL()) return;
+            const { width, height } = this.getSize();
+            const dpr = getDpr();
+            const w = Math.floor(width * dpr);
+            const h = Math.floor(height * dpr);
+            if (this.canvasGL.width !== w || this.canvasGL.height !== h) {
+              this.canvasGL.width = w; this.canvasGL.height = h;
+            }
+            this.gl.viewport(0, 0, w, h);
+          }
+          drawGL() {
+            if (!this.initGL()) { this.draw2D(); return; }
+            this.resizeGL();
+            const gl = this.gl;
+            const { width, height } = this.getSize();
+            const dpr = getDpr();
+            gl.useProgram(this.glProgram);
+            gl.uniform2f(this.glUniforms.uResolutionPx, width * dpr, height * dpr);
+            gl.uniform1f(this.glUniforms.uPointSizePx, DOT_RADIUS * 2 * dpr);
+            gl.uniform1ui(this.glUniforms.uSeed, (sessionSeed + this.seedOffset) >>> 0);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+            gl.drawArrays(gl.POINTS, 0, this.count);
+          }
+          draw() {
+            // Přepni viditelnost canvasů dle režimu
+            if (this.count > GL_THRESHOLD && this.initGL()) {
+              this.canvasGL.style.display = 'block';
+              this.canvas2d.style.display = 'none';
+              this.drawGL();
+            } else {
+              this.canvasGL.style.display = 'none';
+              this.canvas2d.style.display = 'block';
+              this.draw2D();
+            }
+          }
+        }
+
+        // DOM odkazy
+        const boxAEl = document.getElementById('boxA');
+        const boxBEl = document.getElementById('boxB');
+        const boxCEl = document.getElementById('boxC');
+        const inputA = document.getElementById('inputA');
+        const inputB = document.getElementById('inputB');
+        const opButtons = Array.from(document.querySelectorAll('.seg button'));
+
+        const boxA = new StarBox(boxAEl, 101);
+        const boxB = new StarBox(boxBEl, 202);
+        const boxC = new StarBox(boxCEl, 303);
+
+        let op = 'plus'; // výchozí +
+
+        function computeResult(a, b, op) {
+          let r = 0;
+          if (op === 'plus') r = a + b;
+          else if (op === 'minus') r = Math.max(0, a - b);
+          else if (op === 'times') r = a * b;
+          else if (op === 'divide') {
+            if (b === 0) r = 0;
+            else r = Math.floor(a / b);
+          }
+          return clampCount(r);
+        }
+
+        function syncResult() {
+          const a = boxA.getCount();
+          const b = boxB.getCount();
+          boxC.setCount(computeResult(a, b, op), true);
+        }
+
+        function scheduleAll() {
+          boxA.draw();
+          boxB.draw();
+          syncResult();
+        }
+
+        // Vstupy pro A a B
+        inputA.addEventListener('input', () => {
+          boxA.setCount(inputA.value, true);
+          syncResult();
+        });
+        inputB.addEventListener('input', () => {
+          boxB.setCount(inputB.value, true);
+          syncResult();
+        });
+
+        // Kolečko mění jen daný box – je řešeno v třídě StarBox; jen synchronizuj inputy a výsledek
+        boxAEl.addEventListener('wheel', () => {
+          inputA.value = String(boxA.getCount());
+          syncResult();
+        }, { passive: true });
+        boxBEl.addEventListener('wheel', () => {
+          inputB.value = String(boxB.getCount());
+          syncResult();
+        }, { passive: true });
+
+        // Operátory
+        opButtons.forEach(btn => {
+          btn.addEventListener('click', () => {
+            opButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            op = btn.getAttribute('data-op');
+            syncResult();
+          });
+        });
+
+        // Resize
+        window.addEventListener('resize', scheduleAll);
+
+        // Inicializace
+        inputA.value = '0';
+        inputB.value = '0';
+        boxA.setCount(0, false);
+        boxB.setCount(0, false);
+        boxC.setCount(0, false);
+        scheduleAll();
+      })();
+    </script>
+  </body>
+  </html>
+
+
