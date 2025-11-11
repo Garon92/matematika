@@ -14,19 +14,19 @@
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
       color: #e5e7eb;
     }
-    .top {
-      width: min(92vw, 1000px);
-      margin: 0 auto;
-      display: flex;
-      justify-content: flex-start;
-      padding: 8px 16px 0;
-    }
-    .top a {
+    .menu-fab {
+      position: fixed;
+      top: 8px;
+      left: 8px;
       color: #cbd5e1;
       text-decoration: none;
       font-size: 14px;
+      padding: 4px 8px;
+      border-radius: 8px;
+      background: rgba(0,0,0,0.35);
+      border: 1px solid #ffffff;
     }
-    .top a:hover { color: #ffffff; text-decoration: underline; }
+    .menu-fab:hover { color: #ffffff; text-decoration: underline; }
     .controls {
       display: flex;
       flex-wrap: wrap;
@@ -175,9 +175,7 @@
   </style>
   </head>
   <body>
-    <div class="top">
-      <a href="index.html">← Menu</a>
-    </div>
+    <a class="menu-fab" href="index.html">← Menu</a>
     <div class="controls">
       <div class="group">
         <span>Režim:</span>

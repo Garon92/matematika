@@ -19,56 +19,21 @@
       gap: 16px;
       padding: 16px;
     }
-    .top {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      justify-content: flex-start;
-    }
-    .top a {
+    .menu-fab {
+      position: fixed;
+      top: 8px;
+      left: 8px;
       color: #cbd5e1;
       text-decoration: none;
       font-size: 14px;
-    }
-    .top a:hover { color: #ffffff; text-decoration: underline; }
-
-    .inputs {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      flex-wrap: wrap;
-    }
-    .inputs .group {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: rgba(255,255,255,0.02);
-      border: 1px solid #ffffff;
-      border-radius: 10px;
-      padding: 6px 10px;
-    }
-    .inputs label {
-      font-size: 12px;
-      color: #cbd5e1;
-    }
-    .inputs input[type="number"] {
-      width: 140px;
-      padding: 6px 8px;
-      font-size: 14px;
-      text-align: center;
+      padding: 4px 8px;
       border-radius: 8px;
-      border: 1px solid #c9ced6;
-      outline: none;
-      background: #0b0b0b;
-      color: #ffffff;
+      background: rgba(0,0,0,0.35);
+      border: 1px solid #ffffff;
     }
-    .inputs input[type="number"]:focus {
-      border-color: #ffd400;
-      box-shadow: 0 0 0 3px rgba(255, 212, 0, 0.2);
-    }
-    .inputs .result {
-      color: #ffd400;
-    }
+    .menu-fab:hover { color: #ffffff; text-decoration: underline; }
+
+    .box-header { /* zůstává stejná pro overlay nad boxy */ }
 
     .layout {
       display: grid;
@@ -165,25 +130,13 @@
   </head>
   <body>
     <div class="wrap">
-      <div class="top">
-        <a href="index.html">← Menu</a>
-      </div>
-      <div class="inputs">
-        <div class="group">
-          <label for="inputA">Číslo A</label>
-          <input id="inputA" type="number" min="0" max="10000000" step="1" value="0" inputmode="numeric" />
-        </div>
-        <div class="group">
-          <label for="inputB">Číslo B</label>
-          <input id="inputB" type="number" min="0" max="10000000" step="1" value="0" inputmode="numeric" />
-        </div>
-        <div class="group result">
-          <label>Výsledek</label>
-          <output id="resultNum">0</output>
-        </div>
-      </div>
+      <a class="menu-fab" href="index.html">← Menu</a>
       <div class="layout">
         <div class="col box" id="boxA">
+          <div class="box-header">
+            <label for="inputA">Číslo A</label>
+            <input id="inputA" type="number" min="0" max="10000000" step="1" value="0" inputmode="numeric" />
+          </div>
           <canvas id="a2d"></canvas>
           <canvas id="aGL" style="display:none"></canvas>
         </div>
@@ -196,6 +149,10 @@
           </div>
         </div>
         <div class="col box" id="boxB">
+          <div class="box-header">
+            <label for="inputB">Číslo B</label>
+            <input id="inputB" type="number" min="0" max="10000000" step="1" value="0" inputmode="numeric" />
+          </div>
           <canvas id="b2d"></canvas>
           <canvas id="bGL" style="display:none"></canvas>
         </div>
@@ -214,7 +171,7 @@
       (function () {
         // Konstanty a barvy přesně jako ve hvezdy.html
         const DOT_RADIUS = 1.8;
-        const GL_THRESHOLD = 100000;
+        const GL_THRESHOLD = 0;
         const MAX_DOTS = 10000000;
         const STAR_COLOR = '#ffd400';
         const BG_COLOR = '#000000';

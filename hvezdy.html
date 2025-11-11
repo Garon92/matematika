@@ -23,18 +23,19 @@
       padding: 12px 0 16px;
       color: #e5e7eb;
     }
-    .top {
-      width: min(90vw, 1000px);
-      display: flex;
-      justify-content: flex-start;
-      padding: 0 0 4px;
-    }
-    .top a {
+    .menu-fab {
+      position: fixed;
+      top: 8px;
+      left: 8px;
       color: #cbd5e1;
       text-decoration: none;
       font-size: 14px;
+      padding: 4px 8px;
+      border-radius: 8px;
+      background: rgba(0,0,0,0.35);
+      border: 1px solid #ffffff;
     }
-    .top a:hover { color: #ffffff; text-decoration: underline; }
+    .menu-fab:hover { color: #ffffff; text-decoration: underline; }
     .controls {
       display: flex;
       align-items: center;
@@ -76,9 +77,7 @@
   </style>
   </head>
   <body>
-    <div class="top">
-      <a href="index.html">← Menu</a>
-    </div>
+    <a class="menu-fab" href="index.html">← Menu</a>
     <div class="controls">
       <label for="count">Počet hvězd:</label>
       <input id="count" type="number" min="0" max="10000000" step="1" placeholder="např. 500" inputmode="numeric" />
@@ -98,7 +97,7 @@
         const canvasGL = document.getElementById('canvasGL');
 
         const DOT_RADIUS = 1.8; // v CSS pixelech
-        const GL_THRESHOLD = 100000; // nad tímto počtem použij WebGL2
+        const GL_THRESHOLD = 0; // použij WebGL2 od 1+
         const MAX_DOTS = 10000000; // horní limit: 10 milionů
 
         // 2D context
