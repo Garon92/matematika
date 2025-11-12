@@ -277,6 +277,18 @@
         function randInt(min, max) {
           return Math.floor(Math.random() * (max - min + 1)) + min;
         }
+        function chance(p) {
+          return Math.random() < p;
+        }
+        function pickNonTrivial(min, max, avoidList) {
+          if (max < min) return min;
+          const avoid = new Set(avoidList || []);
+          for (let i = 0; i < 20; i++) {
+            const x = randInt(min, max);
+            if (!avoid.has(x)) return x;
+          }
+          return randInt(min, max);
+        }
 
         function pickOp() {
           if (mode !== 'mix') return mode;
@@ -296,19 +308,46 @@
             b = randInt(0, a); // nezáporný výsledek
             ans = a - b; sym = '−';
           } else if (op === 'times') {
-            a = randInt(0, maxVal);
-            if (a === 0) {
+            if (maxVal <= 1) {
+              a = randInt(0, maxVal);
               b = randInt(0, maxVal);
             } else {
-              b = randInt(0, Math.floor(maxVal / a));
+              // prefer numbers >= 2 where possible to omezit x0/x1
+              const aMin = Math.min(2, maxVal);
+              a = pickNonTrivial(0, maxVal, maxVal >= 3 ? [0, 1] : []);
+              let bMax = Math.floor(maxVal / Math.max(1, a));
+              if (bMax <= 0) {
+                a = 0; bMax = maxVal;
+              }
+              const bMin = Math.min(2, bMax);
+              if (bMax >= bMin) {
+                b = pickNonTrivial(0, bMax, bMax >= 3 ? [0, 1] : []);
+              } else {
+                b = randInt(0, bMax);
+              }
             }
             ans = a * b; sym = '×';
           } else if (op === 'divide') {
-            const d = Math.max(1, randInt(1, Math.min(maxVal, 12)));
-            const q = randInt(0, maxVal);
-            a = d * q;
-            b = d;
-            ans = q; sym = '÷';
+            // Každé číslo ve vzorci ≤ maxVal a a = b * q
+            if (maxVal === 0) {
+              a = 0; b = 1; ans = 0; sym = '÷';
+            } else {
+              // prefer b >= 2 a q >= 1, ale s malou šancí povolit 1/0
+              const bMin = Math.min(2, maxVal);
+              const candidateB = pickNonTrivial(1, maxVal, maxVal >= 3 ? [1] : []);
+              const qMax = Math.floor(maxVal / candidateB);
+              let q;
+              if (qMax <= 0) {
+                q = 0;
+              } else {
+                const qMin = qMax >= 2 ? 1 : 0;
+                q = pickNonTrivial(qMin, qMax, qMax >= 3 ? [0] : []);
+              }
+              b = candidateB;
+              ans = q;
+              a = b * ans;
+              sym = '÷';
+            }
           }
           return { a, b, sym, ans };
         }
