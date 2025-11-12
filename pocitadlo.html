@@ -102,6 +102,18 @@
       align-items: center;
       gap: 10px;
     }
+    .answer-display {
+      display: none;
+      width: min(50vw, 320px);
+      padding: 16px 18px;
+      font-size: clamp(24px, 5vw, 40px);
+      text-align: center;
+      border-radius: 12px;
+      border: 1px solid #c9ced6;
+      background: #0b0b0b;
+      color: #ffffff;
+      min-height: 56px;
+    }
     .answer input[type="number"] {
       width: min(50vw, 320px);
       padding: 16px 18px;
@@ -218,6 +230,9 @@
         width: 100%;
         max-width: none;
       }
+      /* hide real input on mobile and show display-only readout */
+      .answer input[type="number"] { display: none; }
+      .answer-display { display: block; width: 100%; }
       .buttons { justify-content: center; }
       .numpad {
         width: 100%;
@@ -254,6 +269,7 @@
         <div class="expr" id="expr">0 + 0 = ?</div>
         <div class="answer">
           <input id="answer" type="number" inputmode="numeric" placeholder="výsledek" />
+          <div id="answerDisplay" class="answer-display"></div>
           <div class="buttons">
             <button class="btn" id="skipBtn">Přeskočit (Esc)</button>
           </div>
@@ -286,6 +302,7 @@
       (function () {
         const exprEl = document.getElementById('expr');
         const answerEl = document.getElementById('answer');
+        const answerDisplay = document.getElementById('answerDisplay') || (function(){ const d=document.createElement('div'); d.id='answerDisplay'; d.className='answer-display'; answerEl.parentElement.insertBefore(d, answerEl.nextSibling); return d; })();
         const msgEl = document.getElementById('msg');
         const okEl = document.getElementById('ok');
         const attemptsEl = document.getElementById('attempts');
@@ -313,6 +330,13 @@
         let ok = 0;
         let attempts = 0;
         let streak = 0;
+        let answerStr = '';
+        const isMobile = () => window.matchMedia('(max-width: 640px)').matches;
+        function setAnswer(v) {
+          answerStr = String(v || '');
+          if (answerEl) answerEl.value = answerStr;
+          if (answerDisplay) answerDisplay.textContent = answerStr || '';
+        }
 
         function randInt(min, max) {
           return Math.floor(rand() * (max - min + 1)) + min;
@@ -560,14 +584,14 @@
           current = p;
           lastKey = problemKey(p);
           renderProblem(current);
-          answerEl.value = '';
+          setAnswer('');
           setMessage('');
-          answerEl.focus();
+          if (!isMobile()) answerEl.focus();
         }
 
         function check() {
           attempts++;
-          const val = Number(answerEl.value);
+          const val = Number(answerStr);
           if (Number.isFinite(val) && val === current.ans) {
             ok++; streak++;
             updateScore();
@@ -604,18 +628,21 @@
             if (!btn) return;
             const key = btn.getAttribute('data-key');
             if (key === 'C') {
-              answerEl.value = '';
-              answerEl.focus();
+              setAnswer('');
+              if (!isMobile()) answerEl.focus();
             } else if (key === 'BACK') {
-              answerEl.value = String(answerEl.value).slice(0, -1);
-              answerEl.focus();
+              setAnswer(answerStr.slice(0, -1));
+              if (!isMobile()) answerEl.focus();
             } else if (key === 'ENTER') {
               check();
             } else if (/^[0-9]$/.test(key)) {
-              answerEl.value = String(answerEl.value || '') + key;
-              answerEl.focus();
+              setAnswer((answerStr || '') + key);
+              if (!isMobile()) answerEl.focus();
             }
           });
+        }
+        if (answerEl) {
+          answerEl.addEventListener('input', () => setAnswer(answerEl.value));
         }
         answerEl.addEventListener('keydown', (e) => {
           if (e.key === 'Enter') {
