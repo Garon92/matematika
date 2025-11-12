@@ -275,10 +275,35 @@
         let streak = 0;
 
         function randInt(min, max) {
-          return Math.floor(Math.random() * (max - min + 1)) + min;
+          return Math.floor(rand() * (max - min + 1)) + min;
         }
-        function chance(p) {
-          return Math.random() < p;
+        // Seeded RNG for reproducibility in a session
+        const sessionSeed = (() => {
+          try {
+            const arr = new Uint32Array(1);
+            (crypto || window.crypto).getRandomValues(arr);
+            return arr[0] >>> 0;
+          } catch (_) {
+            return ((Date.now() ^ Math.floor(Math.random() * 0xffffffff)) >>> 0);
+          }
+        })();
+        function mulberry32(seed) {
+          let a = seed >>> 0;
+          return function () {
+            a |= 0; a = (a + 0x6D2B79F5) | 0;
+            let t = Math.imul(a ^ (a >>> 15), 1 | a);
+            t ^= t + Math.imul(t ^ (t >>> 7), 61 | t);
+            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+          };
+        }
+        const rand = mulberry32(sessionSeed);
+        function chance(p) { return rand() < p; }
+        function shuffle(arr) {
+          for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(rand() * (i + 1));
+            const tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+          }
+          return arr;
         }
         function pickNonTrivial(min, max, avoidList) {
           if (max < min) return min;
@@ -299,6 +324,30 @@
           }
           return pairs;
         }
+        const WEIGHTS = {
+          mul: { pZero: 0.02, pOne: 0.08 },
+          div: { pQuotient1: 0.05, pDivideBy1: 0.02 }
+        };
+        let mulCore = [], mulIdx = 0;
+        let divCore = [], divIdx = 0;
+        function buildMulCore(N) {
+          const pairs = [];
+          for (let a = 2; a <= N; a++) {
+            for (let b = a; b <= N; b++) pairs.push([a, b]);
+          }
+          shuffle(pairs);
+          mulCore = pairs; mulIdx = 0;
+        }
+        function buildDivCore(N) {
+          const pairs = [];
+          for (let d = 2; d <= N; d++) {
+            const qMax = Math.floor(N / d);
+            for (let q = 2; q <= qMax; q++) pairs.push([d * q, d]);
+          }
+          shuffle(pairs);
+          divCore = pairs; divIdx = 0;
+        }
+        function rebuildCores() { buildMulCore(maxVal); buildDivCore(maxVal); }
 
         function pickOp() {
           if (mode !== 'mix') return mode;
@@ -324,27 +373,29 @@
               b = randInt(0, maxVal);
               ans = a * b;
             } else {
-              const pZero = maxVal >= 5 ? 0.05 : 0.1;
-              if (chance(pZero)) {
-                const zeroA = chance(0.5);
-                if (zeroA) {
-                  a = 0;
-                  b = maxVal >= 2 ? pickNonTrivial(0, maxVal, [0,1]) : randInt(0, maxVal);
-                } else {
-                  b = 0;
-                  a = maxVal >= 2 ? pickNonTrivial(0, maxVal, [0,1]) : randInt(0, maxVal);
-                }
+              const pZero = WEIGHTS.mul.pZero;
+              const pOne  = WEIGHTS.mul.pOne;
+              const r = rand();
+              if (r < pZero) {
+                // rare ×0
+                const swap = chance(0.5);
+                const nonTriv = maxVal >= 2 ? pickNonTrivial(2, maxVal, []) : randInt(0, maxVal);
+                a = swap ? 0 : nonTriv;
+                b = swap ? nonTriv : 0;
+                ans = a * b;
+              } else if (r < pZero + pOne) {
+                // limited ×1
+                const swap = chance(0.5);
+                const nonTriv = maxVal >= 2 ? pickNonTrivial(2, maxVal, []) : 1;
+                a = swap ? 1 : nonTriv;
+                b = swap ? nonTriv : 1;
                 ans = a * b;
               } else {
-                const prod = randInt(1, maxVal);
-                const pairs = factorPairsWithin(prod, maxVal);
-                const nonTrivial = pairs.filter(([x, y]) => x >= 2 && y >= 2);
-                const pick = (arr) => arr[randInt(0, arr.length - 1)];
-                let sel = (nonTrivial.length ? pick(nonTrivial) : pick(pairs));
-                if (chance(0.5)) sel = [sel[1], sel[0]];
-                a = sel[0];
-                b = sel[1];
-                ans = prod;
+                if (mulCore.length === 0) buildMulCore(maxVal);
+                const pair = mulCore[(mulIdx++) % mulCore.length];
+                a = pair[0]; b = pair[1];
+                if (chance(0.5)) { const t = a; a = b; b = t; }
+                ans = a * b;
               }
             }
           } else if (op === 'divide') {
@@ -352,22 +403,22 @@
             if (maxVal === 0) {
               a = 0; b = 1; ans = 0;
             } else {
-              const pZeroQ = maxVal >= 5 ? 0.05 : 0.1;
-              let q;
-              if (chance(pZeroQ)) {
-                q = 0;
+              const pQ1 = WEIGHTS.div.pQuotient1;
+              const pD1 = WEIGHTS.div.pDivideBy1;
+              const r = rand();
+              if (r < pQ1 && maxVal >= 2) {
+                // q = 1 => n = d
+                b = randInt(2, maxVal);
+                a = b; ans = 1;
+              } else if (r < pQ1 + pD1 && maxVal >= 2) {
+                // divide by 1
+                a = randInt(2, maxVal);
+                b = 1; ans = a;
               } else {
-                if (maxVal >= 2) q = pickNonTrivial(1, maxVal, [0,1]);
-                else q = 1;
+                if (divCore.length === 0) buildDivCore(maxVal);
+                const pair = divCore[(divIdx++) % divCore.length];
+                a = pair[0]; b = pair[1]; ans = Math.floor(a / b);
               }
-              let bMax = Math.floor(maxVal / Math.max(1, q));
-              if (bMax < 1) bMax = 1;
-              let bCand;
-              if (bMax >= 2) bCand = pickNonTrivial(1, bMax, [1]);
-              else bCand = 1;
-              b = bCand;
-              ans = q;
-              a = b * ans;
             }
           }
           return { a, b, sym, ans };
@@ -485,6 +536,7 @@
         maxEl.addEventListener('input', () => {
           maxVal = Number(maxEl.value) || 20;
           rangeLabel.textContent = '≤ ' + maxVal;
+          rebuildCores();
           nextProblem();
         });
         checkBtn.addEventListener('click', check);
@@ -524,6 +576,7 @@
 
         // init
         rangeLabel.textContent = '≤ ' + maxVal;
+        rebuildCores();
         updateScore();
         nextProblem();
       })();
