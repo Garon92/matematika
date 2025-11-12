@@ -171,6 +171,24 @@
       font-size: clamp(24px, 6vw, 42px);
       padding: 0 8px;
     }
+    /* Mobile layout */
+    @media (max-width: 980px) {
+      .labels { grid-template-columns: 1fr 24px 1fr 24px 1fr; }
+    }
+    @media (max-width: 720px) {
+      .labels { grid-template-columns: 1fr; justify-items: center; gap: 10px; }
+      .layout {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto auto auto;
+        gap: 14px;
+      }
+      .op { padding: 0; }
+      .seg { flex-direction: row; }
+      .eq { font-size: 36px; padding: 4px 0; }
+      .box { height: min(36vh, 80vw); }
+    }
+    /* touch improvements */
+    .seg button { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
   </style>
   </head>
   <body>
