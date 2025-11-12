@@ -244,6 +244,7 @@
         const MAX_DOTS = 10000000;
         const STAR_COLOR = '#ffd400';
         const BG_COLOR = '#000000';
+        const REF_COUNT_FOR_MIN_SIZE = 500; // při a nad této hodnotě je velikost minimální
 
         // Relace seed – deterministické v rámci reloadu, jiné po reloadu
         const sessionSeed = (() => {
@@ -320,12 +321,23 @@
             this.ensure2D();
             this.ctx2d.setTransform(dpr, 0, 0, dpr, 0, 0);
           }
+          computeRadiusPx() {
+            const minR = DOT_RADIUS;
+            const { width, height } = this.getSize();
+            const minDim = Math.max(1, Math.min(width, height));
+            const maxCap = Math.min(22, Math.floor(minDim * 0.04));
+            const c = Math.max(1, this.count);
+            let r = minR * Math.sqrt(REF_COUNT_FOR_MIN_SIZE / c);
+            if (r > maxCap) r = maxCap;
+            if (r < minR) r = minR;
+            return r;
+          }
           draw2D() {
             this.resize2D();
             const ctx = this.ctx2d;
             ctx.clearRect(0, 0, this.canvas2d.width, this.canvas2d.height);
             const { width, height } = this.getSize();
-            const r = DOT_RADIUS;
+            const r = this.computeRadiusPx();
             const rInner = r * 0.5;
             const minX = r, maxX = width - r;
             const minY = r, maxY = height - r;
@@ -450,7 +462,7 @@
             const dpr = getDpr();
             gl.useProgram(this.glProgram);
             gl.uniform2f(this.glUniforms.uResolutionPx, width * dpr, height * dpr);
-            gl.uniform1f(this.glUniforms.uPointSizePx, DOT_RADIUS * 2 * dpr);
+            gl.uniform1f(this.glUniforms.uPointSizePx, this.computeRadiusPx() * 2 * dpr);
             gl.uniform1ui(this.glUniforms.uSeed, (sessionSeed + this.seedOffset) >>> 0);
             gl.clear(gl.COLOR_BUFFER_BIT);
             gl.drawArrays(gl.POINTS, 0, this.count);

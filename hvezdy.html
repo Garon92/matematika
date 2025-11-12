@@ -105,6 +105,7 @@
         const DOT_RADIUS = 1.8; // v CSS pixelech
         const GL_THRESHOLD = 0; // použij WebGL2 od 1+
         const MAX_DOTS = 10000000; // horní limit: 10 milionů
+        const REF_COUNT_FOR_MIN_SIZE = 500; // při a nad této hodnotě je velikost minimální
 
         // 2D context
         let ctx2d = null;
@@ -133,6 +134,19 @@
 
         function getDpr() {
           return window.devicePixelRatio || 1;
+        }
+
+        // Dynamické měřítko hvězd: pro malá čísla větší hvězdy, pro velká minimální velikost
+        function computeStarRadiusPx(count) {
+          const c = Math.max(1, Math.floor(Number(count) || 1));
+          const { width, height } = getBoxSize();
+          const minR = DOT_RADIUS;
+          const minDim = Math.max(1, Math.min(width, height));
+          const maxCap = Math.min(22, Math.floor(minDim * 0.04)); // horní strop dle velikosti boxu
+          let r = minR * Math.sqrt(REF_COUNT_FOR_MIN_SIZE / c);
+          if (r > maxCap) r = maxCap;
+          if (r < minR) r = minR;
+          return r;
         }
 
         // ----- 2D Canvas -----
@@ -172,7 +186,7 @@
           ctx2d.clearRect(0, 0, canvas2d.width, canvas2d.height);
 
           const { width, height } = getBoxSize();
-          const r = DOT_RADIUS;
+          const r = computeStarRadiusPx(count);
           const rInner = r * 0.5;
           const minX = r;
           const maxX = width - r;
@@ -324,7 +338,7 @@
           const dpr = getDpr();
           gl.useProgram(glProgram);
           gl.uniform2f(glUniforms.uResolutionPx, width * dpr, height * dpr);
-          gl.uniform1f(glUniforms.uPointSizePx, DOT_RADIUS * 2 * dpr);
+          gl.uniform1f(glUniforms.uPointSizePx, computeStarRadiusPx(count) * 2 * dpr);
           gl.uniform1ui(glUniforms.uSeed, sessionSeed >>> 0);
           gl.clear(gl.COLOR_BUFFER_BIT);
           gl.drawArrays(gl.POINTS, 0, count);
