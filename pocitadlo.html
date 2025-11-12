@@ -283,11 +283,21 @@
         function pickNonTrivial(min, max, avoidList) {
           if (max < min) return min;
           const avoid = new Set(avoidList || []);
-          for (let i = 0; i < 20; i++) {
+          for (let i = 0; i < 24; i++) {
             const x = randInt(min, max);
             if (!avoid.has(x)) return x;
           }
           return randInt(min, max);
+        }
+        function factorPairsWithin(n, limit) {
+          const pairs = [];
+          const up = Math.min(n, limit);
+          for (let d = 1; d <= up; d++) {
+            if (n % d !== 0) continue;
+            const e = n / d;
+            if (e <= limit) pairs.push([d, e]);
+          }
+          return pairs;
         }
 
         function pickOp() {
@@ -308,45 +318,56 @@
             b = randInt(0, a); // nezáporný výsledek
             ans = a - b; sym = '−';
           } else if (op === 'times') {
+            sym = '×';
             if (maxVal <= 1) {
               a = randInt(0, maxVal);
               b = randInt(0, maxVal);
+              ans = a * b;
             } else {
-              // prefer numbers >= 2 where possible to omezit x0/x1
-              const aMin = Math.min(2, maxVal);
-              a = pickNonTrivial(0, maxVal, maxVal >= 3 ? [0, 1] : []);
-              let bMax = Math.floor(maxVal / Math.max(1, a));
-              if (bMax <= 0) {
-                a = 0; bMax = maxVal;
-              }
-              const bMin = Math.min(2, bMax);
-              if (bMax >= bMin) {
-                b = pickNonTrivial(0, bMax, bMax >= 3 ? [0, 1] : []);
+              const pZero = maxVal >= 5 ? 0.05 : 0.1;
+              if (chance(pZero)) {
+                const zeroA = chance(0.5);
+                if (zeroA) {
+                  a = 0;
+                  b = maxVal >= 2 ? pickNonTrivial(0, maxVal, [0,1]) : randInt(0, maxVal);
+                } else {
+                  b = 0;
+                  a = maxVal >= 2 ? pickNonTrivial(0, maxVal, [0,1]) : randInt(0, maxVal);
+                }
+                ans = a * b;
               } else {
-                b = randInt(0, bMax);
+                const prod = randInt(1, maxVal);
+                const pairs = factorPairsWithin(prod, maxVal);
+                const nonTrivial = pairs.filter(([x, y]) => x >= 2 && y >= 2);
+                const pick = (arr) => arr[randInt(0, arr.length - 1)];
+                let sel = (nonTrivial.length ? pick(nonTrivial) : pick(pairs));
+                if (chance(0.5)) sel = [sel[1], sel[0]];
+                a = sel[0];
+                b = sel[1];
+                ans = prod;
               }
             }
-            ans = a * b; sym = '×';
           } else if (op === 'divide') {
-            // Každé číslo ve vzorci ≤ maxVal a a = b * q
+            sym = '÷';
             if (maxVal === 0) {
-              a = 0; b = 1; ans = 0; sym = '÷';
+              a = 0; b = 1; ans = 0;
             } else {
-              // prefer b >= 2 a q >= 1, ale s malou šancí povolit 1/0
-              const bMin = Math.min(2, maxVal);
-              const candidateB = pickNonTrivial(1, maxVal, maxVal >= 3 ? [1] : []);
-              const qMax = Math.floor(maxVal / candidateB);
+              const pZeroQ = maxVal >= 5 ? 0.05 : 0.1;
               let q;
-              if (qMax <= 0) {
+              if (chance(pZeroQ)) {
                 q = 0;
               } else {
-                const qMin = qMax >= 2 ? 1 : 0;
-                q = pickNonTrivial(qMin, qMax, qMax >= 3 ? [0] : []);
+                if (maxVal >= 2) q = pickNonTrivial(1, maxVal, [0,1]);
+                else q = 1;
               }
-              b = candidateB;
+              let bMax = Math.floor(maxVal / Math.max(1, q));
+              if (bMax < 1) bMax = 1;
+              let bCand;
+              if (bMax >= 2) bCand = pickNonTrivial(1, bMax, [1]);
+              else bCand = 1;
+              b = bCand;
               ans = q;
               a = b * ans;
-              sym = '÷';
             }
           }
           return { a, b, sym, ans };
