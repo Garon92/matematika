@@ -26,9 +26,10 @@ Hravá aplikace na procvičování matematiky pro děti zhruba od 5 do 9 let. So
   Ctrl ×100, Shift ×1000), tažením prstem a štípnutím.
 - **Hvězdná kalkulačka** – A + − · : B = C z hvězdiček (A zlaté, B modré), odčítání s přeškrtnutými hvězdami,
   dělení se zbytkem, režim „Hádej výsledek“.
-- **Předčítání česky** (Web Speech API – jen když má zařízení český hlas), notace `·` a `:` jako ve škole
+- **Předčítání česky** (Web Speech API – jen když má zařízení český hlas): příklady se čtou samy podle rodinného
+  nastavení „Předčítání“ (⚙), tlačítko 🔊 / klávesa R přečte příklad vždy. Notace `·` a `:` jako ve škole
   (přepínatelná na `×` a `÷`), světlý i tmavý vzhled, PWA (funguje offline, dá se nainstalovat).
-- **Pro rodiče** (otevře se podržením tlačítka): přehled posledních 14 dní, úspěšnost podle operací, nejčastější chyby,
+- **Pro rodiče** (odkaz dole na úvodní obrazovce, otevře se podržením tlačítka): přehled posledních 14 dní, úspěšnost podle operací, nejčastější chyby,
   postup v úrovních, nastavení (délka cvičení, denní cíl, nápověda, předčítání, klávesnice, odemknutí všech úrovní),
   záloha a obnovení postupu.
 

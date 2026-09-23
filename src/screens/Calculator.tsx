@@ -178,7 +178,7 @@ export function Calculator() {
         setSolved(true);
         sfx.success();
         confetti({ particleCount: 80 });
-        if (ttsOk && prefs.tts !== 'off') speak('Výborně!');
+        if (ttsOk) speak('Výborně!', { auto: true });
       } else {
         sfx.error();
         setWrong(true);

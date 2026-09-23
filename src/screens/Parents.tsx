@@ -398,11 +398,7 @@ function Overview() {
                 confirmLabel: 'Smazat vše',
                 danger: true,
               });
-              if (ok) {
-                resetAll();
-                toast('Postup smazán.', { variant: 'success' });
-                navigate('');
-              }
+              if (ok) resetAll(); // reloads into the first-run intro
             }}
           >
             <Icon name="trash" size={20} /> Smazat postup

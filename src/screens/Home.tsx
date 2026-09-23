@@ -4,13 +4,13 @@ import { dueCards } from '../lib/srs';
 import { opSymbol } from '../lib/notation';
 import { plural } from '../lib/czech';
 import { greeting } from '../kit';
-import { daily, usePrefs, useSettings, useStore, today } from '../state/store';
+import { daily, usePrefs, useStore, today } from '../state/store';
 import { href, navigate } from '../router';
 import { Icon, type IconName } from '../ui/Icon';
 import { Mascot } from '../ui/Mascot';
 import { ProgressRing } from '../ui/ProgressRing';
 import { StarRating } from '../ui/StarRating';
-import { ProfileChip } from '../ui/Profiles';
+import { ProfileChip, useProfiles } from '../ui/Profiles';
 import { activeProfile } from '../state/profiles';
 import { AREA_COLORS, areaStyle } from './areaStyle';
 import { Onboarding } from './Onboarding';
@@ -57,7 +57,6 @@ function ModeTile({ to, icon, title, desc, badge, variant }: { to: string; icon:
 
 export function Home() {
   const prefs = usePrefs();
-  const settings = useSettings();
   const progress = useStore('progress');
   useStore('stats'); // re-render after every answer (daily lives outside the store)
   const deck = useStore('deck');
@@ -68,7 +67,7 @@ export function Home() {
   const due = dueCards(deck, t).length;
   const rec = recommend(progress, prefs.unlockAll);
   const stars = totalStars(progress);
-  void settings; // the main profile's name is the shared g92 player name → re-render on change
+  useProfiles(); // the main profile's name is the family player name → re-render on change
   const name = activeProfile().name;
   const goalDone = doneToday >= prefs.dailyGoal;
   const challenge = useStore('challenge');

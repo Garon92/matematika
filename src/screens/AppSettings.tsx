@@ -1,10 +1,14 @@
-import { setPrefs, usePrefs } from '../state/store';
+import { useState } from 'react';
+import { setSettings, SETTINGS_LABELS } from '../kit';
+import { setPrefs, usePrefs, useSettings } from '../state/store';
+import { activeProfile, activeProfileId, MAIN, updateProfile } from '../state/profiles';
 import { useTts } from '../state/tts';
 import { Segmented, SwitchRow } from '../ui/Segmented';
 
 /** App-specific settings (used in the kit settings dialog and on the parents screen). */
 export function PrefsForm({ full = false }: { full?: boolean }) {
   const p = usePrefs();
+  const settings = useSettings();
   const tts = useTts();
   return (
     <div className="prefs">
@@ -35,26 +39,16 @@ export function PrefsForm({ full = false }: { full?: boolean }) {
           ]}
         />
       </div>
-      <div className="g92-field">
-        <span className="g92-label">Předčítání příkladů</span>
-        {tts ? (
-          <Segmented
-            block
-            label="Předčítání"
-            value={p.tts}
-            onChange={(v) => setPrefs({ tts: v })}
-            options={[
-              { value: 'auto', label: 'Vždy číst' },
-              { value: 'button', label: 'Tlačítkem 🔊' },
-              { value: 'off', label: 'Vypnuto' },
-            ]}
-          />
-        ) : (
-          <p className="g92-hint">Tento prohlížeč nemá český hlas, předčítání proto není k dispozici.</p>
-        )}
-      </div>
       {full && (
         <>
+          {/* the kit settings dialog has this switch itself (showVoice); the parents page repeats it */}
+          <SwitchRow
+            id="prefs-voice"
+            label={SETTINGS_LABELS.voice}
+            hint={tts ? 'Příklady se samy čtou nahlas. Tlačítko 🔊 přečte příklad vždy.' : 'Tento prohlížeč nemá český hlas, předčítání proto není k dispozici.'}
+            checked={settings.voice}
+            onChange={(v) => setSettings({ voice: v })}
+          />
           <div className="g92-field">
             <span className="g92-label">Příkladů v jednom cvičení</span>
             <Segmented block label="Délka cvičení" value={p.sessionLength} onChange={(v) => setPrefs({ sessionLength: v })} options={[5, 10, 15, 20].map((n) => ({ value: n, label: String(n) }))} />
@@ -83,20 +77,36 @@ export function PrefsForm({ full = false }: { full?: boolean }) {
   );
 }
 
+/** Name of the active child when it isn't the main profile (the kit dialog then hides its family-name row). */
+function ProfileNameField() {
+  const id = activeProfileId();
+  const [name, setName] = useState(() => activeProfile().name);
+  if (id === MAIN) return null;
+  return (
+    <label className="g92-field">
+      <span className="g92-label">{SETTINGS_LABELS.name}</span>
+      <input
+        className="g92-input"
+        value={name}
+        maxLength={24}
+        autoComplete="off"
+        onChange={(e) => {
+          setName(e.target.value);
+          updateProfile(id, { name: e.target.value });
+        }}
+      />
+      <span className="g92-hint">Platí pro dítě, které právě hraje. Ostatní děti upravíte v části Pro rodiče.</span>
+    </label>
+  );
+}
+
+/** Matematika's part of the kit settings dialog (registered once with setSettingsSection in App). */
 export function AppSettings() {
   return (
     <div className="flex flex-col gap-3 pt-2">
       <p className="g92-eyebrow">Matematika</p>
+      <ProfileNameField />
       <PrefsForm />
-      <a
-        className="g92-btn g92-btn--soft g92-btn--block"
-        href="#/rodice"
-        onClick={() => {
-          (document.querySelector('dialog[open]') as HTMLDialogElement | null)?.close();
-        }}
-      >
-        Další nastavení a přehled pro rodiče
-      </a>
     </div>
   );
 }

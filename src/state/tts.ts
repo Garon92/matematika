@@ -1,5 +1,10 @@
-/** Czech text-to-speech via the Web Speech API — only offered when a Czech voice exists. */
+/**
+ * Czech text-to-speech via the Web Speech API — only offered when a Czech voice exists.
+ * Family rule (kit v0.7): automatic speech follows the global "Předčítání" setting (`speak(t, { auto: true })`),
+ * speech the child asked for (🔊, R) always speaks.
+ */
 import { useEffect, useState } from 'react';
+import { canAutoSpeak, getSettings } from '../kit';
 
 function synth(): SpeechSynthesis | null {
   return typeof window !== 'undefined' && 'speechSynthesis' in window ? window.speechSynthesis : null;
@@ -16,7 +21,8 @@ export function ttsAvailable(): boolean {
   return czechVoice() !== null;
 }
 
-export function speak(text: string): void {
+export function speak(text: string, opts: { auto?: boolean } = {}): void {
+  if (opts.auto && !canAutoSpeak()) return;
   const s = synth();
   const voice = czechVoice();
   if (!s || !voice) return;
@@ -27,6 +33,7 @@ export function speak(text: string): void {
     u.lang = voice.lang;
     u.rate = 0.9;
     u.pitch = 1.05;
+    u.volume = Math.max(0.2, getSettings().volume);
     s.speak(u);
   } catch {
     /* ignore */

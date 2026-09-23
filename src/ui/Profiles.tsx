@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import { confirmDialog, sfx, toast } from '../kit';
-import { activeProfileId, addProfile, AVATARS, MAIN, profiles, removeProfile, switchProfile, updateProfile, type Profile } from '../state/profiles';
+import { activeProfileId, addProfile, AVATARS, MAIN, profiles, profilesVersion, removeProfile, subscribeProfiles, switchProfile, updateProfile, type Profile } from '../state/profiles';
 import { useSettings } from '../state/store';
 import { openReactDialog } from '../kit/react/dialog';
 import { Icon } from './Icon';
@@ -41,9 +41,15 @@ function Picker({ close }: { close: () => void }) {
   );
 }
 
+/** Re-render when a profile (or the family name of the main profile) changes. */
+export function useProfiles(): void {
+  useSettings();
+  useSyncExternalStore(subscribeProfiles, profilesVersion);
+}
+
 /** Small chip on Home: avatar + name → picker (only when there is more than one child). */
 export function ProfileChip() {
-  useSettings(); // re-render when the main profile's name changes
+  useProfiles();
   const list = profiles();
   if (list.length < 2) return null;
   const p = list.find((x) => x.id === activeProfileId()) ?? list[0]!;
@@ -101,7 +107,7 @@ function ProfileEditor({ initial, onSave, onCancel }: { initial?: Profile; onSav
 
 /** Parents screen: manage children profiles. */
 export function ProfilesManager() {
-  useSettings();
+  useProfiles();
   const [, force] = useState(0);
   const refresh = () => force((x) => x + 1);
   const list = profiles();

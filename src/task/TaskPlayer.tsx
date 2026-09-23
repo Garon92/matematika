@@ -4,7 +4,7 @@ import type { Notation } from '../lib/notation';
 import { answerDigits, expected, inputMode, isCorrect } from '../lib/math';
 import { hintFor } from '../lib/hints';
 import { speechFor } from '../lib/speech';
-import { flash, haptic, sfx } from '../kit';
+import { flash, haptic, LABELS, sfx } from '../kit';
 import { speak, stopSpeaking, useTts } from '../state/tts';
 import type { AnswerRecord, Prefs } from '../state/store';
 import { Icon } from '../ui/Icon';
@@ -19,7 +19,7 @@ const RETRY = ['Ještě jednou, zvládneš to!', 'To nevadí, zkus to znovu.', '
 export interface TaskPlayerProps {
   task: Task;
   notation: Notation;
-  prefs: Pick<Prefs, 'hints' | 'tts' | 'numpad'>;
+  prefs: Pick<Prefs, 'hints' | 'numpad'>;
   /** Wrong attempts before the answer is revealed (3 in lessons, 1 in the race). */
   maxWrong: number;
   /** Shorter feedback (timed race). */
@@ -63,10 +63,10 @@ export function TaskPlayer({ task, notation, prefs, maxWrong, fast = false, tool
     [],
   );
 
-  // read the task aloud automatically
+  // read the task aloud automatically (kit "Předčítání"; never in the race – it would eat the time)
   useEffect(() => {
-    if (prefs.tts === 'auto' && ttsOk) speak(speechFor(task));
-  }, [task, prefs.tts, ttsOk]);
+    if (ttsOk && !fast) speak(speechFor(task), { auto: true });
+  }, [task, ttsOk, fast]);
 
   const later = (fn: () => void, ms: number) => {
     timers.current.push(window.setTimeout(fn, ms));
@@ -109,8 +109,8 @@ export function TaskPlayer({ task, notation, prefs, maxWrong, fast = false, tool
         const e = expected(task);
         const txt = e.kind === 'num' ? String(e.value) : e.kind === 'rem' ? `${e.q}, zbytek ${e.r}` : e.value;
         setMessage(fast ? `Správně je ${txt}.` : `Správně je ${txt}. Nevadí, příště to dáš!`);
-        // non-readers must hear the answer too (unless read-aloud is switched off)
-        if (prefs.tts !== 'off' && ttsOk && !fast) speak(`Správně je ${txt}.`);
+        // non-readers must hear the answer too (unless Předčítání is switched off)
+        if (ttsOk && !fast) speak(`Správně je ${txt}.`, { auto: true });
         if (fast) later(() => complete(true, w), 1100);
         return;
       }
@@ -129,7 +129,7 @@ export function TaskPlayer({ task, notation, prefs, maxWrong, fast = false, tool
         }
       }, 750);
     },
-    [phase, paused, input, task, wrongs, maxWrong, fast, complete, prefs.tts, prefs.hints, hint, ttsOk, onAttempt],
+    [phase, paused, input, task, wrongs, maxWrong, fast, complete, prefs.hints, hint, ttsOk, onAttempt],
   );
 
   const press = useCallback(
@@ -214,7 +214,7 @@ export function TaskPlayer({ task, notation, prefs, maxWrong, fast = false, tool
         setInput((s) => ({ ...s, field: s.field === 0 ? 1 : 0 }));
       } else if ((k === 'h' || k === 'H' || k === 'n' || k === 'N') && hint) {
         toggleHint();
-      } else if ((k === 'p' || k === 'P') && ttsOk) {
+      } else if ((k === 'r' || k === 'R') && ttsOk) {
         speak(speechFor(task));
       }
     };
@@ -223,15 +223,15 @@ export function TaskPlayer({ task, notation, prefs, maxWrong, fast = false, tool
   });
 
   const mood: Mood = phase === 'correct' ? 'wow' : phase === 'wrong' ? 'oops' : phase === 'revealed' ? 'think' : 'happy';
-  const showTts = ttsOk && prefs.tts !== 'off';
+  const showTts = ttsOk; // a tapped 🔊 always speaks (family rule)
   const e = expected(task);
   if (import.meta.env.DEV) (window as unknown as { __mat?: unknown }).__mat = { task, expected: e, phase };
   const revealed = phase === 'revealed' && !fast;
 
   const continueBtn = (
     <button type="button" className="g92-btn g92-btn--xl g92-btn--block continue-btn" onClick={() => complete(true, wrongs)} autoFocus>
-      Pokračovat
-      <Icon name="arrowRight" size={26} />
+      <Icon name="play" size={24} />
+      {LABELS.resume}
     </button>
   );
 
@@ -246,7 +246,7 @@ export function TaskPlayer({ task, notation, prefs, maxWrong, fast = false, tool
       <div className="player__top">
         <div className="player__toolbar">{toolbar}</div>
         {showTts && (
-          <button type="button" className="g92-btn g92-btn--soft g92-btn--icon" onClick={() => speak(speechFor(task))} aria-label="Přečíst příklad" title="Přečíst (P)">
+          <button type="button" className="g92-btn g92-btn--soft g92-btn--icon" onClick={() => speak(speechFor(task))} aria-label="Přečíst příklad" title="Přečíst (R)" aria-keyshortcuts="R">
             <Icon name="speaker" size={24} />
           </button>
         )}

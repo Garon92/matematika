@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { autoPause, clearConfetti, confetti, countdown, sfx, showPause } from '../kit';
+import { appbarPauseButton, autoPause, clearConfetti, confetti, countdown, guardLeave, sfx, showPause } from '../kit';
 import { TIMED, TIMED_SECONDS, timedById } from '../lib/timed';
 import { makeStream } from '../lib/session';
 import { mulberry32, randomSeed } from '../lib/rng';
@@ -9,7 +9,7 @@ import { plural } from '../lib/czech';
 import type { Task } from '../lib/types';
 import { celebrateGoal, recordTask, submitTimed, usePrefs, useStore, type AnswerRecord } from '../state/store';
 import { TaskPlayer } from '../task/TaskPlayer';
-import { href, navigate } from '../router';
+import { guardRoute, href, navigate } from '../router';
 import { Icon } from '../ui/Icon';
 import { Mascot } from '../ui/Mascot';
 import { StarRating } from '../ui/StarRating';
@@ -149,33 +149,43 @@ function TimedRun({ id }: { id: string }) {
         { label: 'Správně', value: scoreRef.current },
         { label: 'Zbývá', value: `${Math.ceil(leftRef.current / 1000)} s` },
       ],
-      menuHref: null,
-      menuLabel: 'Jiný závod',
+      quit: true, // "Ukončit hru" → the race list; the appbar "Menu" is the only way out of the app
+      noMenu: true,
     });
     pauseOverlay.current = o;
     void o.then((choice) => {
       pauseOverlay.current = null;
       if (choice === 'resume') setPhase('play');
       else if (choice === 'restart') restart();
-      else navigate('zavod');
+      else if (choice === 'quit') navigate('zavod');
     });
   }, [def.title, restart]);
 
   pauseRef.current = pause;
 
-  // auto-pause when the tab is hidden / window loses focus
+  // auto-pause when the tab is hidden, the window loses focus or any kit dialog opens (?, ⚙, leave guard)
   useEffect(() => (phase === 'play' ? autoPause(pause) : undefined), [phase, pause]);
-  // …and when the appbar opens help or settings (the child can't answer behind a dialog)
+  // family rule: the pause button lives in the appbar while the race runs
   useEffect(() => {
     if (phase !== 'play') return;
-    const onDialog = () => pause();
-    window.addEventListener('g92-help', onDialog);
-    window.addEventListener('g92-settings', onDialog);
+    const btn = appbarPauseButton(() => pauseRef.current());
+    btn.setAttribute('aria-keyshortcuts', 'P Escape');
+    return () => btn.remove();
+  }, [phase]);
+  // leaving mid-race: appbar "Menu" / reload ask first; Back pauses (the pause overlay offers "Ukončit hru")
+  useEffect(() => {
+    const running = () => phaseRef.current !== 'done';
+    const offMenu = guardLeave({ isActive: running, onPause: () => pauseRef.current(), message: 'Rozjetý závod se nezapočítá.' });
+    const offBack = guardRoute(() => {
+      if (!running()) return true;
+      pauseRef.current();
+      return false;
+    });
     return () => {
-      window.removeEventListener('g92-help', onDialog);
-      window.removeEventListener('g92-settings', onDialog);
+      offMenu();
+      offBack();
     };
-  }, [phase, pause]);
+  }, []);
   useEffect(() => () => pauseOverlay.current?.close('menu'), []);
 
   const onComplete = useCallback(
@@ -245,16 +255,13 @@ function TimedRun({ id }: { id: string }) {
         key={`${round}-${taskIdx}`}
         task={task}
         notation={prefs.notation}
-        prefs={{ ...prefs, hints: 'off', tts: prefs.tts === 'auto' ? 'button' : prefs.tts }}
+        prefs={{ ...prefs, hints: 'off' }}
         maxWrong={1}
         fast
         paused={phase !== 'play'}
         onComplete={onComplete}
         toolbar={
           <>
-            <button type="button" className="g92-btn g92-btn--ghost g92-btn--icon" onClick={pause} aria-label="Pauza (P)" disabled={phase !== 'play'}>
-              <Icon name="pause" size={22} />
-            </button>
             <div className="min-w-0 flex-1">
               <div className="timer-bar" role="timer" aria-label={`Zbývá ${Math.ceil(left / 1000)} sekund`}>
                 <span className={`timer-bar__fill ${frac < 0.2 ? 'is-low' : ''}`} style={{ transform: `scaleX(${frac})` }} />

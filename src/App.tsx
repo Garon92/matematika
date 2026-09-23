@@ -1,15 +1,16 @@
-import { lazy, Suspense, useEffect } from 'react';
+import { lazy, Suspense, useEffect, type ReactNode } from 'react';
+import { createRoot } from 'react-dom/client';
 import { useRoute } from './router';
 import { Home } from './screens/Home';
 import { Ladder } from './screens/Ladder';
 import { Session } from './screens/Session';
 import { NotFound } from './screens/NotFound';
 import { AppSettings } from './screens/AppSettings';
-import { openReactSettingsDialog } from './kit/react/dialog';
 import { ErrorBoundary } from './ui/ErrorBoundary';
 import { iconSvg } from './ui/Icon';
 import { reportActivity } from './state/store';
-import { clearConfetti, setHelp } from './kit';
+import { appTitle, clearConfetti, setHelp, setSettingsSection } from './kit';
+import { activeProfileId, MAIN } from './state/profiles';
 import { areaById, levelById } from './lib/levels';
 
 // less frequent screens are loaded on demand
@@ -58,16 +59,43 @@ const TITLES: Record<string, string> = {
   rodice: 'Pro rodiče',
 };
 
+/** Family title format (kit appTitle): "Matematika – Počítání hrou", pages "Sčítání · Matematika – Počítání hrou". */
 function titleFor([a, b]: string[]): string {
-  if (!a) return 'Matematika – počítání s Hvězdičkou';
+  if (!a) return appTitle('matematika');
   const part = a === 'oblast' ? areaById(b ?? '')?.title : a === 'uroven' ? levelById(b ?? '')?.title : TITLES[a];
-  return part ? `${part} – Matematika` : 'Matematika';
+  return appTitle('matematika', part);
+}
+
+/** React content for the kit settings dialog; unmounted when that dialog closes. */
+function reactSection(node: ReactNode): HTMLElement {
+  const host = document.createElement('div');
+  host.className = 'g92-react-host';
+  const root = createRoot(host);
+  root.render(node);
+  const onClose = (e: Event) => {
+    const dialog = (e as CustomEvent<{ dialog?: HTMLDialogElement }>).detail?.dialog;
+    if (dialog && !dialog.contains(host)) return;
+    document.removeEventListener('g92-dialog-close', onClose);
+    window.setTimeout(() => root.unmount(), 400);
+  };
+  document.addEventListener('g92-dialog-close', onClose);
+  return host;
+}
+
+/** ⚙ always opens the kit dialog with Matematika's section (kit v0.7 C-11); profiles manage names themselves. */
+function registerSettings() {
+  return setSettingsSection({
+    extra: () => reactSection(<AppSettings />),
+    // the family name belongs to the first child; other children edit their own name in the section
+    nameMode: activeProfileId() === MAIN ? 'auto' : 'hidden',
+    showVoice: true,
+    more: { href: '#/rodice' },
+  });
 }
 
 /** Pictogram help for the appbar "?" (kit help dialog). */
 function registerHelp() {
   return setHelp({
-    title: 'Jak na to',
     intro: 'S Hvězdičkou se naučíš počítat krok za krokem. Vyber si oblast, sbírej hvězdy a odemykej další úrovně.',
     howTo: [
       { icon: iconSvg('play'), text: 'Velké tlačítko Hrát tě pustí tam, kde má smysl pokračovat.' },
@@ -83,10 +111,13 @@ function registerHelp() {
       { keys: ['0', '…', '9'], text: 'napsat číslo' },
       { keys: ['Enter'], text: 'zkontrolovat' },
       { keys: ['⌫'], text: 'smazat' },
-      { keys: ['N'], text: 'nápověda' },
-      { keys: ['P'], text: 'přečíst příklad' },
+      { keys: ['N'], text: 'nápověda k příkladu' },
+      { keys: ['R'], text: 'přečíst příklad' },
       { keys: ['<', '=', '>'], text: 'porovnání' },
-      { keys: ['Esc'], text: 'ukončit / pauza' },
+      { keys: ['Esc'], text: 'ukončit hru' },
+      { keys: ['P', 'Esc'], text: 'pauza v závodě' },
+      { keys: ['M'], text: 'zvuk zapnout / vypnout' },
+      { keys: ['?'], text: 'tato nápověda' },
     ],
   });
 }
@@ -104,19 +135,17 @@ export function App() {
 
   useEffect(() => {
     reportActivity();
-    return registerHelp();
+    const offHelp = registerHelp();
+    const offSettings = registerSettings();
+    return () => {
+      offHelp();
+      offSettings();
+    };
   }, []);
 
   return (
     <>
-      <g92-appbar
-        app="matematika"
-        help
-        ong92-settings={(e: CustomEvent) => {
-          e.preventDefault();
-          openReactSettingsDialog(<AppSettings />);
-        }}
-      />
+      <g92-appbar app="matematika" help keys />
       <main id="main" className="app-main">
         <ErrorBoundary resetKey={key}>
           <Suspense fallback={<div className="screen-loading" aria-busy="true" />}>

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { clearConfetti, confetti, openDialog, sfx } from '../kit';
+import { clearConfetti, confetti, guardLeave, LABEL_ICONS, LABELS, openDialog, sfx } from '../kit';
 import { levelById, sampleIn } from '../lib/levels';
 import { buildTasks } from '../lib/session';
 import { mulberry32, randomSeed } from '../lib/rng';
@@ -11,13 +11,15 @@ import type { Task } from '../lib/types';
 import { celebrateGoal, finishChallenge, finishLevel, finishSession, recordTask, store, today, usePrefs, type AnswerRecord } from '../state/store';
 import { challengeTasks } from '../lib/challenge';
 import { TaskPlayer } from '../task/TaskPlayer';
-import { navigate } from '../router';
+import { guardRoute, navigate } from '../router';
 import { Icon } from '../ui/Icon';
 import { Mascot } from '../ui/Mascot';
 import { StarRating } from '../ui/StarRating';
 import { NotFound } from './NotFound';
 
 export type SessionSource = { kind: 'level'; levelId: string } | { kind: 'mistakes' } | { kind: 'daily' };
+
+const QUIT_MESSAGE = 'Rozpracované příklady se nezapočítají do hvězd.';
 
 function Progress({ total, records, index }: { total: number; records: AnswerRecord[]; index: number }) {
   return (
@@ -103,21 +105,33 @@ export function Session({ source }: { source: SessionSource }) {
     } else sfx.coin();
   }, [result]);
 
+  // a running session with answers in it would lose them → ask first (Esc/✕, Back, appbar "Menu", reload)
+  const activeRef = useRef(false);
+  activeRef.current = records.length > 0 && !result;
+  const askQuit = useCallback(async () => {
+    // "Pokračovat" is the default (Enter is the answer key, it must never quit by accident)
+    const d = openDialog({
+      title: 'Ukončit hru?',
+      content: `<p>${QUIT_MESSAGE}</p>`,
+      actions: [
+        { label: LABELS.quit, value: 'leave', variant: 'secondary', icon: LABEL_ICONS.quit },
+        { label: LABELS.resume, value: 'stay', variant: 'primary', autofocus: true, icon: LABEL_ICONS.resume },
+      ],
+    });
+    return (await d.closed) === 'leave';
+  }, []);
   const leave = useCallback(async () => {
-    if (records.length > 0 && !result) {
-      // "Pokračovat" is the default (Enter is the answer key, it must never quit by accident)
-      const d = openDialog({
-        title: 'Ukončit cvičení?',
-        content: '<p>Rozpracované příklady se nezapočítají do hvězd.</p>',
-        actions: [
-          { label: 'Ukončit', value: 'leave', variant: 'secondary' },
-          { label: 'Pokračovat', value: 'stay', variant: 'primary', autofocus: true },
-        ],
-      });
-      if ((await d.closed) !== 'leave') return;
-    }
+    if (activeRef.current && !(await askQuit())) return;
     navigate(backHref);
-  }, [records.length, result, backHref]);
+  }, [askQuit, backHref]);
+  useEffect(() => {
+    const offMenu = guardLeave({ isActive: () => activeRef.current, message: QUIT_MESSAGE });
+    const offBack = guardRoute(() => (activeRef.current ? askQuit() : true));
+    return () => {
+      offMenu();
+      offBack();
+    };
+  }, [askQuit]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -230,7 +244,7 @@ export function Session({ source }: { source: SessionSource }) {
               {replay(false)}
               {backHref !== '' && (
                 <button type="button" ref={primaryRef} className="g92-btn g92-btn--lg" onClick={() => navigate(backHref)}>
-                  {source.kind === 'mistakes' ? 'Chyby k procvičení' : 'Úrovně'} <Icon name="grid" size={22} />
+                  {source.kind === 'mistakes' ? 'Chyby k procvičení' : 'Úrovně'} <Icon name={source.kind === 'mistakes' ? 'repeat' : 'star'} size={22} />
                 </button>
               )}
             </>
@@ -255,7 +269,7 @@ export function Session({ source }: { source: SessionSource }) {
         onComplete={onComplete}
         toolbar={
           <>
-            <button type="button" className="g92-btn g92-btn--ghost g92-btn--icon" onClick={() => void leave()} aria-label="Ukončit cvičení" title="Ukončit (Esc)">
+            <button type="button" className="g92-btn g92-btn--ghost g92-btn--icon" onClick={() => void leave()} aria-label={LABELS.quit} title={`${LABELS.quit} (Esc)`}>
               <Icon name="close" size={24} />
             </button>
             <div className="min-w-0 flex-1">

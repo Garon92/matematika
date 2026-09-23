@@ -1,10 +1,10 @@
 import { useSyncExternalStore } from 'react';
-import { confetti, createDaily, createStore, haptic, readJSON, recordActivity, safeStorage, sfx, writeJSON } from '../kit';
+import { confetti, createDaily, createStore, haptic, readJSON, recordActivity, resetApp, sfx, writeJSON } from '../kit';
 export { useSettings } from '../kit/react/hooks';
-import { emptyProgress, recordLevel, totalStars, type Progress } from '../lib/progress';
+import { emptyProgress, recommend, recordLevel, totalStars, type Progress } from '../lib/progress';
 import { emptyDeck, recordRight, recordWrong, type MistakeDeck } from '../lib/srs';
 import { emptyStats, pruneDays, recordAnswer, recordSession, type Stats } from '../lib/stats';
-import { LEVELS, levelById, type AreaId } from '../lib/levels';
+import { LEVELS, type AreaId } from '../lib/levels';
 import { dayIndex } from '../lib/dates';
 import { taskKey, taskOp } from '../lib/math';
 import type { Task } from '../lib/types';
@@ -18,8 +18,6 @@ export interface Prefs {
   notation: 'school' | 'intl';
   /** auto = button + shown automatically after the 2nd mistake */
   hints: 'auto' | 'button' | 'off';
-  /** auto = read every task aloud */
-  tts: 'auto' | 'button' | 'off';
   sessionLength: number;
   dailyGoal: number;
   numpad: 'phone' | 'calc';
@@ -29,7 +27,6 @@ export interface Prefs {
 export const DEFAULT_PREFS: Prefs = {
   notation: 'school',
   hints: 'auto',
-  tts: 'button',
   sessionLength: 10,
   dailyGoal: 20,
   numpad: 'phone',
@@ -110,7 +107,7 @@ export function setPrefs(patch: Partial<Prefs>): void {
 }
 
 /** Daily goal + day streak (kit; the menu reads g92:matematika:daily for its chips). */
-export const daily = createDaily(APP_NS, { goal: DEFAULT_PREFS.dailyGoal });
+export const daily = createDaily(APP_NS, { goal: DEFAULT_PREFS.dailyGoal, unit: ['příklad', 'příklady', 'příkladů'] });
 {
   const goal = { ...DEFAULT_PREFS, ...store.get('prefs') }.dailyGoal;
   if (daily.goal() !== goal) daily.setGoal(goal);
@@ -159,8 +156,7 @@ export function finishLevel(levelId: string, stars: 0 | 1 | 2 | 3, firstTry: num
   store.update('progress', (p) => recordLevel(p, levelId, stars, firstTry));
   finishSession();
   const after = store.get('progress').levels[levelId]?.stars ?? 0;
-  const level = levelById(levelId);
-  reportActivity(level ? level.title : null);
+  reportActivity();
   return { before, after };
 }
 
@@ -173,13 +169,16 @@ export function markArea(area: AreaId): void {
   store.update('progress', (p) => ({ ...p, lastArea: area }));
 }
 
-export function reportActivity(note: string | null = null): void {
+/** The menu card: "58 z 360 hvězd" and a "Pokračovat" link straight to the recommended level (kit C-16). */
+export function reportActivity(): void {
   const p = store.get('progress');
   const stars = totalStars(p);
+  const next = recommend(p, { ...DEFAULT_PREFS, ...store.get('prefs') }.unlockAll);
   recordActivity('matematika', {
     progress: stars / (LEVELS.length * 3),
-    metric: { label: 'Hvězd', value: stars },
-    ...(note ? { note } : {}),
+    metric: { value: stars, of: LEVELS.length * 3, unit: ['hvězda', 'hvězdy', 'hvězd'] },
+    note: next.title,
+    href: `/matematika/#/uroven/${next.id}`,
   });
 }
 
@@ -189,7 +188,7 @@ export function finishChallenge(stars: number): { before: number; after: number 
   const before = prev.day === day ? prev.stars : 0;
   store.update('challenge', (c) => recordChallenge({ ...emptyChallenge(), ...c }, day, stars));
   finishSession();
-  reportActivity('Výzva dne');
+  reportActivity();
   return { before, after: store.get('challenge').stars };
 }
 
@@ -208,9 +207,14 @@ export function submitTimed(id: string, score: number, stars: number): { isNewBe
 
 const DAILY_KEY = `g92:${APP_NS}:daily`;
 
+/**
+ * "Smazat postup": everything of the active child goes — store, daily goal/streak, the menu's activity (kit
+ * resetApp, C-17). The children list stays. The page reloads so no in-memory copy writes the data back.
+ */
 export function resetAll(): void {
-  store.reset();
-  safeStorage.removeItem(DAILY_KEY);
+  resetApp(APP_NS, { keep: ['profiles'] });
+  location.hash = '#/';
+  location.reload();
 }
 
 /** Everything as JSON (export for parents). */

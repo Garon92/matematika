@@ -5,7 +5,7 @@
  * Switching a profile reloads the page — every store is created for exactly one profile.
  */
 // direct module imports (not the kit barrel) keep this file DOM-free and unit-testable
-import { getSettings, setSettings } from '../kit/settings';
+import { getAppPlayerName, getPlayerName, setAppPlayerName, setSettings } from '../kit/settings';
 import { readJSON, safeStorage, writeJSON } from '../kit/storage';
 
 export interface Profile {
@@ -31,9 +31,21 @@ function load(): ProfilesData {
   return { list, active };
 }
 
+const listeners = new Set<() => void>();
+let version = 0;
+
 function save(d: ProfilesData): void {
   writeJSON(KEY, d);
+  version++;
+  listeners.forEach((fn) => fn());
 }
+
+/** Change notifications (names/avatars edited in ⚙ or on the parents screen) — for useSyncExternalStore. */
+export function subscribeProfiles(fn: () => void): () => void {
+  listeners.add(fn);
+  return () => listeners.delete(fn);
+}
+export const profilesVersion = () => version;
 
 /** Store namespace of a profile. */
 export function appIdOf(id: string): string {
@@ -48,9 +60,9 @@ export function activeAppId(): string {
   return appIdOf(activeProfileId());
 }
 
-/** Profiles with display names (the main profile's name is the shared g92 player name). */
+/** Profiles with display names (the main profile's name is the family player name — kit getPlayerName). */
 export function profiles(): Profile[] {
-  const player = getSettings().playerName?.trim() ?? '';
+  const player = getPlayerName('matematika').trim();
   return load().list.map((p) => (p.id === MAIN ? { ...p, name: player || p.name } : p));
 }
 
@@ -76,7 +88,12 @@ export function addProfile(name: string, avatar: string): Profile {
 }
 
 export function updateProfile(id: string, patch: Partial<Omit<Profile, 'id'>>): void {
-  if (id === MAIN && patch.name !== undefined) setSettings({ playerName: patch.name.trim().slice(0, 24) });
+  if (id === MAIN && patch.name !== undefined) {
+    const name = patch.name.trim().slice(0, 24);
+    // the main child's name is the family name, unless matematika has its own override (kit C-08)
+    if (getAppPlayerName('matematika') !== null) setAppPlayerName('matematika', name);
+    else setSettings({ playerName: name });
+  }
   const d = load();
   save({ ...d, list: d.list.map((p) => (p.id === id ? { ...p, ...patch, name: (patch.name ?? p.name).trim().slice(0, 24) } : p)) });
 }
