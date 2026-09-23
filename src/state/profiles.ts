@@ -4,7 +4,9 @@
  * daily chips keep working); other profiles live under `g92:matematika@<id>:*`.
  * Switching a profile reloads the page — every store is created for exactly one profile.
  */
-import { getSettings, readJSON, safeStorage, setSettings, writeJSON } from '../kit';
+// direct module imports (not the kit barrel) keep this file DOM-free and unit-testable
+import { getSettings, setSettings } from '../kit/settings';
+import { readJSON, safeStorage, writeJSON } from '../kit/storage';
 
 export interface Profile {
   id: string;
