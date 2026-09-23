@@ -19,9 +19,13 @@ type G92AppbarAttributes = DetailedHTMLProps<HTMLAttributes<HTMLElement>, HTMLEl
   'no-activity'?: boolean;
   'no-theme-color'?: boolean;
   transparent?: boolean;
+  /** global shortcuts M / F / ? */
+  keys?: boolean;
   class?: string;
   /** React 19 attaches `on<event>` props of custom elements as event listeners */
   'ong92-help'?: (e: CustomEvent) => void;
+  /** "Menu" pressed — preventDefault() to handle leaving yourself (or use guardLeave) */
+  'ong92-back'?: (e: CustomEvent<{ href: string }>) => void;
   'ong92-settings'?: (e: CustomEvent) => void;
   'ong92-fullscreen'?: (e: CustomEvent<{ active: boolean }>) => void;
 };
