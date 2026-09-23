@@ -109,8 +109,13 @@ function unitForms(item: Pick<Item, 'nom1' | 'few' | 'many'>): [string, string, 
   return [item.nom1, item.few, item.many];
 }
 
+/** Czech typography: no one-letter preposition at a line end, numbers stick to their noun. */
+export function nbsp(text: string): string {
+  return text.replace(/(?<=^|\s)([vVkKsSzZoOuUaAiI])\s/g, '$1\u00A0').replace(/(\d+) /g, '$1\u00A0');
+}
+
 function task(op: Op, a: number, b: number, answer: number, text: string, icon: string, forms: [string, string, string]): WordTask {
-  return { kind: 'word', op, a, b, answer, text, icon, unit: forms[2], unitForms: forms };
+  return { kind: 'word', op, a, b, answer, text: nbsp(text), icon, unit: forms[2], unitForms: forms };
 }
 
 // ---------------------------------------------------------------- templates
@@ -200,7 +205,7 @@ function multiplication(rng: Rng, a: number, b: number): WordTask {
     const verb = a >= 2 && a <= 4 ? 'mají' : 'má';
     const who = plural(a, f.one, f.few, f.many);
     const text = `${f.intro} ${qty(b, f.part)}. Kolik ${f.part.many} ${verb} ${a} ${who}?`;
-    return task('mul', a, b, a * b, text, f.icon, unitForms(f.part));
+    return { ...task('mul', a, b, a * b, text, f.icon, unitForms(f.part)), pic: 'none' };
   }
   const p = pick(rng, PEOPLE);
   if (a >= 2 && chance(rng, 0.25)) {

@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { mulberry32 } from '../rng';
-import { wordProblem, qty, be, ITEMS } from '../words';
+import { wordProblem, qty, be, ITEMS, nbsp } from '../words';
+
+describe('typography', () => {
+  it('keeps one-letter prepositions and numbers with the next word', () => {
+    expect(nbsp('V každém sáčku je 9 autíček a k tomu 2 míčky')).toBe('V\u00A0každém sáčku je 9\u00A0autíček a\u00A0k\u00A0tomu 2\u00A0míčky');
+  });
+});
 
 describe('declension helpers', () => {
   const hruska = ITEMS.find((i) => i.nom1 === 'hruška')!;
@@ -43,8 +49,8 @@ describe('word problems', () => {
       const t = gen(rng);
       if (t.kind !== 'word') throw new Error();
       for (const it of ITEMS) {
-        expect(t.text).not.toMatch(new RegExp(`\\b1 ${it.many}\\b`));
-        expect(t.text).not.toMatch(new RegExp(`\\b([5-9]|1\\d|20) ${it.few}\\b`));
+        expect(t.text).not.toMatch(new RegExp(`\\b1\\s${it.many}\\b`));
+        expect(t.text).not.toMatch(new RegExp(`\\b([5-9]|1\\d|20)\\s${it.few}\\b`));
       }
     }
   });

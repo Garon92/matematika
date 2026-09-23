@@ -6,6 +6,7 @@ import { Session } from './screens/Session';
 import { NotFound } from './screens/NotFound';
 import { AppSettings } from './screens/AppSettings';
 import { openSettingsWithExtra } from './ui/reactDialog';
+import { ErrorBoundary } from './ui/ErrorBoundary';
 import { iconSvg } from './ui/Icon';
 import { reportActivity } from './state/store';
 import { setHelp } from './kit';
@@ -113,9 +114,11 @@ export function App() {
         }}
       />
       <main id="main" className="app-main">
-        <Suspense fallback={<div className="screen-loading" aria-busy="true" />}>
-          <Screen route={route} />
-        </Suspense>
+        <ErrorBoundary resetKey={key}>
+          <Suspense fallback={<div className="screen-loading" aria-busy="true" />}>
+            <Screen route={route} />
+          </Suspense>
+        </ErrorBoundary>
       </main>
     </>
   );

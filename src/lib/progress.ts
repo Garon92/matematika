@@ -15,9 +15,11 @@ export interface Progress {
   unlocked: string[];
   lastArea: AreaId | null;
   lastLevel: string | null;
+  /** Level chosen in onboarding ("Co už umíš?") — recommended until it has a star. */
+  start?: string | null;
 }
 
-export const emptyProgress = (): Progress => ({ levels: {}, unlocked: [], lastArea: null, lastLevel: null });
+export const emptyProgress = (): Progress => ({ levels: {}, unlocked: [], lastArea: null, lastLevel: null, start: null });
 
 export function starsOf(p: Progress, levelId: string): number {
   return p.levels[levelId]?.stars ?? 0;
@@ -32,7 +34,7 @@ export function isUnlocked(p: Progress, level: LevelDef, unlockAll = false): boo
   const idx = list.findIndex((l) => l.id === level.id);
   if (idx <= 0) return true;
   const prev = list[idx - 1]!;
-  return starsOf(p, prev.id) >= 1 || (p.levels[level.id]?.plays ?? 0) > 0;
+  return starsOf(p, prev.id) >= 1 || p.unlocked.includes(prev.id) || (p.levels[level.id]?.plays ?? 0) > 0;
 }
 
 /** Records a finished session; stars / best only ever go up. */
@@ -65,9 +67,12 @@ export function totalStars(p: Progress): number {
 /** The level a "Hrát" button should start: first unlocked unfinished level in the last area. */
 export function recommend(p: Progress, unlockAll = false, preferArea?: AreaId): LevelDef {
   const areaId = preferArea ?? p.lastArea ?? 'count';
+  const start = p.start ? levelById(p.start) : undefined;
+  if (start && start.area === areaId && starsOf(p, start.id) === 0) return start;
   const list = levelsOf(areaId);
   const open = list.filter((l) => isUnlocked(p, l, unlockAll));
-  const firstNew = open.find((l) => starsOf(p, l.id) === 0);
+  // levels unlocked in onboarding count as "already known" — don't send the child back to them
+  const firstNew = open.find((l) => starsOf(p, l.id) === 0 && !p.unlocked.includes(l.id));
   if (firstNew) return firstNew;
   const firstImperfect = open.find((l) => starsOf(p, l.id) < 3);
   if (firstImperfect) return firstImperfect;
@@ -129,5 +134,5 @@ export function unlockUpTo(p: Progress, startId: string): Progress {
       upTo('sub', startId === 'mul' ? null : 'sub-100');
       break;
   }
-  return { ...p, unlocked: [...unlocked], lastArea: target.area, lastLevel: null };
+  return { ...p, unlocked: [...unlocked], lastArea: target.area, lastLevel: null, start: target.id };
 }

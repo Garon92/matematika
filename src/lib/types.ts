@@ -70,6 +70,8 @@ export interface WordTask {
   unit: string;
   /** Unit forms for the answer: [1, 2–4, 5+]. */
   unitForms: [string, string, string];
+  /** 'none' when the icon is not the counted item ("a dog has 4 legs") — no picture then. */
+  pic?: 'none';
 }
 
 export type Task = ExprTask | RemainderTask | CompareTask | CountTask | SequenceTask | PlaceTask | WordTask;

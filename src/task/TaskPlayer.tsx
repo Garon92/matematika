@@ -242,6 +242,9 @@ export function TaskPlayer({ task, notation, prefs, maxWrong, fast = false, tool
       </div>
 
       <div className="player__main">
+        <p className="g92-sr-only" aria-live="polite">
+          {speechFor(task)}
+        </p>
         <div className={`player__task ${task.kind === 'word' ? 'is-word' : ''}`}>
           <div className="player__view" ref={taskRef}>
             <TaskView task={task} input={input} phase={phase} notation={notation} onField={(f) => setInput((s) => ({ ...s, field: f }))} />

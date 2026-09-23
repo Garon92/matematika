@@ -60,8 +60,14 @@ describe('level progress', () => {
   it('onboarding unlocks earlier levels', () => {
     const p = unlockUpTo(emptyProgress(), 'to20');
     expect(isUnlocked(p, levelById('add-20c')!)).toBe(true);
-    expect(isUnlocked(p, levelById('add-miss20')!)).toBe(false);
+    expect(isUnlocked(p, levelById('add-miss20')!)).toBe(true);
+    expect(isUnlocked(p, levelById('add-tens')!)).toBe(false);
     expect(p.lastArea).toBe('add');
-    expect(recommend(p).id).toBe('add-5');
+    // the chosen start level is recommended, not the already-known easier ones
+    expect(recommend(p).id).toBe('add-20c');
+    const after = recordLevel(p, 'add-20c', 2, 8);
+    expect(recommend(after).id).toBe('add-miss20');
+    // in another area, onboarding-unlocked levels are skipped too
+    expect(recommend(after, false, 'count').id).toBe('place');
   });
 });

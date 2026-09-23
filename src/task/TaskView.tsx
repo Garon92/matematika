@@ -124,6 +124,8 @@ export function TaskView({ task, input, phase, notation, onField }: {
       const v = Number(s.value);
       const unit = s.value ? plural(v, task.unitForms[0], task.unitForms[1], task.unitForms[2]) : task.unitForms[2];
       const picture = task.a <= 10 && task.b <= 10 && (task.op === 'add' || task.op === 'sub');
+      const groups = task.op === 'mul' && task.pic !== 'none' && task.a * task.b <= 40 && task.a <= 6;
+      const pile = task.op === 'div' && task.a <= 30;
       return (
         <div className="flex w-full flex-col items-center gap-3">
           <p className="word-text">{task.text}</p>
@@ -146,6 +148,26 @@ export function TaskView({ task, input, phase, notation, onField }: {
                   </span>
                 </>
               )}
+            </div>
+          )}
+          {groups && (
+            <div className="word-pic" aria-hidden="true">
+              {Array.from({ length: task.a }, (_, g) => (
+                <span key={g} className="word-pic__group word-pic__box">
+                  {Array.from({ length: task.b }, (_, i) => (
+                    <span key={i}>{task.icon}</span>
+                  ))}
+                </span>
+              ))}
+            </div>
+          )}
+          {pile && (
+            <div className="word-pic" aria-hidden="true">
+              <span className="word-pic__group word-pic__pile">
+                {Array.from({ length: task.a }, (_, i) => (
+                  <span key={i}>{task.icon}</span>
+                ))}
+              </span>
             </div>
           )}
           <div className="expr expr--small">
