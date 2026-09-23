@@ -209,6 +209,7 @@ function TimedRun({ id }: { id: string }) {
   const frac = left / (TIMED_SECONDS * 1000);
   return (
     <div className="screen screen--play timed-run">
+      <h1 className="g92-sr-only">Závod s časem – {def.title}</h1>
       <TaskPlayer
         key={`${round}-${taskIdx}`}
         task={task}

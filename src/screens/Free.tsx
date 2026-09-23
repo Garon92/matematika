@@ -92,6 +92,7 @@ export function Free() {
 
   return (
     <div className="screen screen--play free-screen">
+      <h1 className="g92-sr-only">Volný trénink</h1>
       <TaskPlayer
         key={idx}
         task={task}

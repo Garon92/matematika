@@ -217,7 +217,7 @@ export function Session({ source }: { source: SessionSource }) {
               <Icon name="close" size={24} />
             </button>
             <div className="min-w-0 flex-1">
-              <p className="session-title">{level ? level.title : source.kind === 'daily' ? 'Výzva dne' : 'Chyby k procvičení'}</p>
+              <h1 className="session-title">{level ? level.title : source.kind === 'daily' ? 'Výzva dne' : 'Chyby k procvičení'}</h1>
               <Progress total={tasks.length} records={records} index={index} />
             </div>
           </>
