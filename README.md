@@ -16,8 +16,11 @@ Hravá aplikace na procvičování matematiky pro děti zhruba od 5 do 9 let. So
   řady pro násobení a dělení), po 3. chybě se ukáže správný výsledek.
 - **Hvězdy 0–3** podle počtu správných odpovědí napoprvé; hvězda odemkne další úroveň (násobilka a dělení jsou otevřené celé).
 - **Chyby k procvičení** – co se nepovedlo, vrací se podle Leitnerových krabiček (dnes, zítra, za 3 a za 7 dní).
-- **Denní cíl a série dní** (sdílené s rozcestníkem garon92), **Závod s časem** (60 s, rekordy, hvězdy),
-  **Volný trénink** (původní „počítadlo“: operace + rozsah 5–100, skóre, Enter/Esc).
+- **Denní cíl a série dní** (sdílené s rozcestníkem garon92), **Výzva dne** (10 příkladů z toho, co dítě už umí,
+  stejná po celý den), **Závod s časem** (60 s, rekordy, hvězdy), **Volný trénink** (původní „počítadlo“:
+  operace + rozsah 5–100, skóre, Enter/Esc).
+- **Ťukej a počítej** – klepnutím na hvězdu se očísluje (1, 2, 3…) se stoupajícím tónem; na nebi i v úlohách.
+- **Více dětí na jednom zařízení** – profily s obrázkem, každé dítě má vlastní hvězdy, chyby, statistiky a sérii.
 - **Hvězdné nebe** – až 10 milionů hvězd (Canvas 2D s animací, nad 8 000 WebGL2), rozložení rozházené / po pěti /
   desítkové rámečky / stovky, číslo slovy a rozklad na desítky a jednotky, ovládání tlačítky ±, kolečkem (Alt ×10,
   Ctrl ×100, Shift ×1000), tažením prstem a štípnutím.
