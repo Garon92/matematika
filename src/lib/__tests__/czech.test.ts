@@ -57,3 +57,35 @@ describe('placeValue', () => {
 it('formats numbers with Czech grouping', () => {
   expect(formatNumber(1234567).replace(/\s/g, ' ')).toBe('1 234 567');
 });
+
+import { vocative, solvedText, questionText, formatDuration } from '../format';
+
+describe('vocative', () => {
+  const cases: [string, string][] = [
+    ['Adámek', 'Adámku'],
+    ['Ema', 'Emo'],
+    ['Anička', 'Aničko'],
+    ['Petr', 'Petře'],
+    ['Filip', 'Filipe'],
+    ['Tomáš', 'Tomáši'],
+    ['Matěj', 'Matěji'],
+    ['Sofie', 'Sofie'],
+    ['Honza', 'Honzo'],
+    ['Adam', 'Adame'],
+  ];
+  for (const [a, b] of cases) it(`${a} → ${b}`, () => expect(vocative(a)).toBe(b));
+});
+
+describe('task texts', () => {
+  it('solved and question texts', () => {
+    const t = { kind: 'expr', op: 'mul', a: 4, b: 7, c: 28, missing: 'b' } as const;
+    expect(solvedText(t)).toBe('4 · 7 = 28');
+    expect(solvedText(t, 'intl')).toBe('4 × 7 = 28');
+    expect(questionText(t)).toBe('4 · ? = 28');
+    expect(solvedText({ kind: 'compare', left: { kind: 'num', value: 3 }, right: { kind: 'expr', op: 'add', a: 2, b: 2 } })).toBe('3 < 2 + 2');
+  });
+  it('durations', () => {
+    expect(formatDuration(42_000)).toBe('42 s');
+    expect(formatDuration(125_000)).toBe('2 min 05 s');
+  });
+});
