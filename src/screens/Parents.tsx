@@ -3,11 +3,11 @@ import { confirmDialog, sfx, toast } from '../kit';
 import { AREAS, levelsOf } from '../lib/levels';
 import { areaStars, starsOf } from '../lib/progress';
 import { allCards } from '../lib/srs';
-import { dayStat, totals, visibleStreak } from '../lib/stats';
+import { dayStat, totals } from '../lib/stats';
 import { dayKeyOf, weekdayShort } from '../lib/dates';
 import { formatDuration, solvedText } from '../lib/format';
 import { plural } from '../lib/czech';
-import { exportData, importData, resetAll, today, usePrefs, useStore } from '../state/store';
+import { daily, exportData, importData, resetAll, today, usePrefs, useStore } from '../state/store';
 import { navigate } from '../router';
 import { Icon } from '../ui/Icon';
 import { StarRating } from '../ui/StarRating';
@@ -184,15 +184,15 @@ function Overview() {
   const t = today();
   const tot = totals(stats);
   const day = dayStat(stats, t);
-  const streak = visibleStreak(stats.streak, t);
+  const streak = daily.streak();
   const acc = tot.solved > 0 ? Math.round((tot.correct / tot.solved) * 100) : 0;
   const ops = Object.entries(stats.ops).filter(([, v]) => v.right + v.wrong > 0);
   const worst = allCards(deck).slice(0, 10);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const tiles: { label: string; value: string; sub?: string }[] = [
-    { label: 'Dnes', value: `${day.correct}/${prefs.dailyGoal}`, sub: `${day.solved} ${plural(day.solved, 'příklad', 'příklady', 'příkladů')}` },
-    { label: 'Série dní', value: String(streak), sub: `nejdelší ${stats.streak.best}` },
+    { label: 'Dnes (cíl)', value: `${daily.today()}/${prefs.dailyGoal}`, sub: `${day.correct} napoprvé správně` },
+    { label: 'Série dní', value: String(streak), sub: `nejdelší ${daily.bestStreak()}` },
     { label: 'Celkem příkladů', value: String(tot.solved), sub: `${tot.days} ${plural(tot.days, 'den', 'dny', 'dní')} s cvičením` },
     { label: 'Napoprvé správně', value: `${acc} %`, sub: 'ze všech příkladů' },
     { label: 'Čas procvičování', value: formatDuration(tot.ms), sub: 'celkem' },

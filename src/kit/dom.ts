@@ -1,4 +1,7 @@
 /** Small DOM helpers + UI icon set shared by kit components (and handy for apps). */
+import { plural } from './cz';
+
+export { plural };
 
 const svg = (body: string, extra = '') =>
   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"${extra}>${body}</svg>`;
@@ -73,17 +76,7 @@ export function starsHTML(count: number, max = 3, extraClass = ''): string {
 }
 
 function pluralStars(n: number): string {
-  if (n === 1) return 'hvězda';
-  if (n >= 2 && n <= 4) return 'hvězdy';
-  return 'hvězd';
-}
-
-/** Czech plural helper: plural(5, 'bod', 'body', 'bodů') → 'bodů' */
-export function plural(n: number, one: string, few: string, many: string): string {
-  const a = Math.abs(n);
-  if (a === 1) return one;
-  if (a >= 2 && a <= 4 && Number.isInteger(a)) return few;
-  return many;
+  return plural(n, 'hvězda', 'hvězdy', 'hvězd');
 }
 
 /** Re-trigger a CSS animation class (e.g. g92-anim-shake) on an element. */

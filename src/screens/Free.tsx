@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { bindRange, sfx } from '../kit';
+import { bindRange, confetti, sfx } from '../kit';
 import { FREE_MAX, FREE_MIN, FREE_STEP, FreeGenerator, type FreeMode } from '../lib/free';
 import { mulberry32, randomSeed } from '../lib/rng';
 import { opSymbol } from '../lib/notation';
@@ -7,7 +7,6 @@ import type { ExprTask } from '../lib/types';
 import { recordTask, store, usePrefs, useStore, type AnswerRecord } from '../state/store';
 import { TaskPlayer } from '../task/TaskPlayer';
 import { Segmented } from '../ui/Segmented';
-import { confetti } from '../ui/confetti';
 import { ScreenHeader } from './ScreenHeader';
 
 /** "Volný trénink" — the original pocitadlo.html: operation, range, score, Enter/Esc, confetti. */
@@ -48,7 +47,7 @@ export function Free() {
     store.update('free', (f) => ({ ...f, attempts: f.attempts + 1, ok: f.ok + (correct ? 1 : 0), bestStreak: Math.max(f.bestStreak, n) }));
     if (n > 0 && n % 10 === 0) {
       sfx.levelUp();
-      confetti({ count: 80 });
+      confetti({ particleCount: 100 });
     }
   }, []);
   const resetStreak = () => {

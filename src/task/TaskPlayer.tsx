@@ -4,7 +4,7 @@ import type { Notation } from '../lib/notation';
 import { answerDigits, expected, inputMode, isCorrect } from '../lib/math';
 import { hintFor } from '../lib/hints';
 import { speechFor } from '../lib/speech';
-import { flash, sfx } from '../kit';
+import { flash, haptic, sfx } from '../kit';
 import { speak, stopSpeaking, useTts } from '../state/tts';
 import type { AnswerRecord, Prefs } from '../state/store';
 import { Icon } from '../ui/Icon';
@@ -93,6 +93,7 @@ export function TaskPlayer({ task, notation, prefs, maxWrong, fast = false, tool
         setPhase('correct');
         setMessage(pick(PRAISE));
         sfx.success();
+        haptic('success');
         onAttempt?.(true);
         later(() => complete(false, wrongs), fast ? 380 : 950);
         return;
@@ -100,6 +101,7 @@ export function TaskPlayer({ task, notation, prefs, maxWrong, fast = false, tool
       const w = wrongs + 1;
       setWrongs(w);
       sfx.error();
+      haptic('error');
       onAttempt?.(false);
       if (w >= maxWrong) {
         setPhase('revealed');

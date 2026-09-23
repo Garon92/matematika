@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react';
-import { createStore, recordActivity, settings } from '../kit';
+import { confetti, createDaily, createStore, haptic, readJSON, recordActivity, safeStorage, sfx, toast, writeJSON } from '../kit';
+export { useSettings } from '../kit/react/hooks';
 import { emptyProgress, recordLevel, totalStars, type Progress } from '../lib/progress';
 import { emptyDeck, recordRight, recordWrong, type MistakeDeck } from '../lib/srs';
 import { emptyStats, pruneDays, recordAnswer, recordSession, type Stats } from '../lib/stats';
@@ -99,10 +100,14 @@ export function usePrefs(): Prefs {
 
 export function setPrefs(patch: Partial<Prefs>): void {
   store.update('prefs', (p) => ({ ...DEFAULT_PREFS, ...p, ...patch }));
+  if (patch.dailyGoal) daily.setGoal(patch.dailyGoal);
 }
 
-export function useSettings() {
-  return useSyncExternalStore(settings.subscribe, settings.snapshot, settings.snapshot);
+/** Daily goal + day streak (kit; the menu reads g92:matematika:daily for its chips). */
+export const daily = createDaily('matematika', { goal: DEFAULT_PREFS.dailyGoal });
+{
+  const goal = { ...DEFAULT_PREFS, ...store.get('prefs') }.dailyGoal;
+  if (daily.goal() !== goal) daily.setGoal(goal);
 }
 
 export const today = () => dayIndex();
@@ -122,6 +127,15 @@ export interface AnswerRecord {
 /** Called after every finished task (session, timed, free, mistakes). */
 export function recordTask(rec: AnswerRecord, level: string | null, opts: { mistakes: boolean } = { mistakes: true }): void {
   const day = today();
+  const d = daily.record(1);
+  if (d.reachedNow) {
+    window.setTimeout(() => {
+      sfx.levelUp();
+      haptic('success');
+      confetti({ particleCount: 120, origin: { x: 0.5, y: 0.3 } });
+      toast(`Denní cíl splněn! ${d.goal} příkladů – jsi hvězda!`, { variant: 'success', icon: '🎯' });
+    }, 400);
+  }
   store.update('stats', (s) => recordAnswer(s, day, taskOp(rec.task), rec.firstTry, rec.ms));
   if (!opts.mistakes) return;
   if (!rec.firstTry) store.update('deck', (d) => recordWrong(d, rec.task, level, day));
@@ -170,23 +184,27 @@ export function submitTimed(id: string, score: number, stars: number): { isNewBe
   return { isNewBest, best: rec.best };
 }
 
+const DAILY_KEY = 'g92:matematika:daily';
+
 export function resetAll(): void {
   store.reset();
+  safeStorage.removeItem(DAILY_KEY);
 }
 
 /** Everything as JSON (export for parents). */
 export function exportData(): string {
-  return JSON.stringify({ app: 'matematika', version: 1, exported: new Date().toISOString(), data: store.all() }, null, 2);
+  return JSON.stringify({ app: 'matematika', version: 1, exported: new Date().toISOString(), data: store.all(), daily: readJSON(DAILY_KEY, null) }, null, 2);
 }
 
 export function importData(json: string): boolean {
   try {
-    const parsed = JSON.parse(json) as { app?: string; data?: Partial<AppData> };
+    const parsed = JSON.parse(json) as { app?: string; data?: Partial<AppData>; daily?: unknown };
     if (parsed.app !== 'matematika' || !parsed.data) return false;
     const d = parsed.data;
     const patch: Partial<AppData> = {};
     for (const k of Object.keys(defaults) as (keyof AppData)[]) if (d[k] !== undefined) (patch as Record<string, unknown>)[k] = d[k];
     store.patch(patch);
+    if (parsed.daily && typeof parsed.daily === 'object') writeJSON(DAILY_KEY, parsed.daily);
     return true;
   } catch {
     return false;

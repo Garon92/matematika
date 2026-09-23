@@ -11,7 +11,7 @@
  *   back         href of the back link (default "/menu/"; "none" hides it; hidden for app="menu")
  *   back-label   text of the back link (default "Menu")
  *   fullscreen   show a fullscreen toggle; value may be a CSS selector of the element to fullscreen
- *   help         show a "?" button → dispatches `g92-help`
+ *   help         show a "?" button → dispatches `g92-help` (cancelable); default opens setHelp() content
  *   no-sound     hide the sound toggle
  *   no-settings  hide the settings button
  *   no-accent    don't set --accent on :root from the registry
@@ -22,7 +22,7 @@
  *   title        replaces the icon + title block
  *   start        after the back link (e.g. a breadcrumb)
  * Events (bubbling, composed)
- *   g92-help                    help button pressed
+ *   g92-help (cancelable)       help button pressed; default: showHelp() if setHelp() was used
  *   g92-settings (cancelable)   settings pressed; preventDefault() to show your own UI
  *   g92-fullscreen              detail: { active: boolean }
  * CSS parts: bar, back, title, icon, name, actions, button
@@ -30,6 +30,7 @@
 import { recordActivity } from './activity';
 import { applyAccent, getApp } from './apps';
 import { openSettingsDialog } from './dialog';
+import { getHelp, showHelp, syncAppbarHelp } from './help';
 import { UI_ICONS } from './dom';
 import { getSettings, resolvedTheme, setSettings, subscribeSettings } from './settings';
 import { sfx } from './sfx';
@@ -104,11 +105,11 @@ a, button {
   width: 38px;
   height: 38px;
   border-radius: 12px;
-  color: var(--accent-contrast, #fff);
+  color: #fff;
   background: linear-gradient(145deg, color-mix(in oklab, var(--accent, #6d5dfc) 78%, #fff), var(--accent, #6d5dfc));
   box-shadow: inset 0 -2px 0 rgb(0 0 0 / .14), 0 2px 8px -2px var(--accent-glow, transparent);
 }
-.icon svg { width: 22px; height: 22px; }
+.icon svg { width: 22px; height: 22px; filter: drop-shadow(0 1px 1px rgb(0 0 0 / .18)); }
 .icon:empty { display: none; }
 .name {
   min-width: 0;
@@ -227,7 +228,9 @@ export class G92Appbar extends HTMLElement {
     };
     this.#els.help.addEventListener('click', () => {
       sfx.tap();
-      this.dispatchEvent(new CustomEvent('g92-help', { bubbles: true, composed: true }));
+      const ev = new CustomEvent('g92-help', { bubbles: true, composed: true, cancelable: true });
+      // default action: show content registered with setHelp() (help.ts)
+      if (this.dispatchEvent(ev) && getHelp()) showHelp();
     });
     this.#els.sound.addEventListener('click', () => {
       const on = !getSettings().sound;
@@ -243,6 +246,7 @@ export class G92Appbar extends HTMLElement {
   }
 
   connectedCallback(): void {
+    syncAppbarHelp(this);
     this.#render();
     this.#renderSound();
     this.#offSettings ??= subscribeSettings(() => {

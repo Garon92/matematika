@@ -28,6 +28,11 @@ const OWN = {
 
 export type IconName = keyof typeof OWN | UiIconName;
 
+/** Raw SVG markup of an icon (for kit APIs that take HTML strings). */
+export function iconSvg(name: IconName): string {
+  return (OWN as Record<string, string>)[name] ?? (UI_ICONS as Record<string, string>)[name] ?? '';
+}
+
 export function Icon({ name, className, size }: { name: IconName; className?: string; size?: number }) {
   const html = (OWN as Record<string, string>)[name] ?? (UI_ICONS as Record<string, string>)[name] ?? '';
   return (

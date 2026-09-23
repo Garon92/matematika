@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { confirmDialog, sfx } from '../kit';
+import { confetti, confirmDialog, sfx } from '../kit';
 import { levelById, sampleIn } from '../lib/levels';
 import { buildTasks } from '../lib/session';
 import { mulberry32, randomSeed } from '../lib/rng';
@@ -14,7 +14,6 @@ import { navigate } from '../router';
 import { Icon } from '../ui/Icon';
 import { Mascot } from '../ui/Mascot';
 import { StarRating } from '../ui/StarRating';
-import { confetti } from '../ui/confetti';
 import { NotFound } from './NotFound';
 
 export type SessionSource = { kind: 'level'; levelId: string } | { kind: 'mistakes' };
@@ -86,10 +85,10 @@ export function Session({ source }: { source: SessionSource }) {
     if (!result) return;
     if (result.stars >= 3) {
       sfx.win();
-      confetti({ count: 140 });
+      confetti({ particleCount: 180, cannons: true });
     } else if (result.stars >= 1) {
       sfx.levelUp();
-      if (result.after > result.before) confetti({ count: 70 });
+      if (result.after > result.before) confetti({ particleCount: 90 });
     } else sfx.coin();
   }, [result]);
 

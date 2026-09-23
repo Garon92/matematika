@@ -7,11 +7,10 @@ import { randInt } from '../lib/rng';
 import type { Op } from '../lib/types';
 import { store, usePrefs, useStore, type CalcState } from '../state/store';
 import { speak, useTts } from '../state/tts';
-import { flash, sfx } from '../kit';
+import { confetti, flash, sfx } from '../kit';
 import { Icon } from '../ui/Icon';
 import { Segmented } from '../ui/Segmented';
 import { useHoldRepeat, useStarGestures } from '../ui/useStarGestures';
-import { confetti } from '../ui/confetti';
 import { Numpad, type PadKey } from '../task/Numpad';
 import { ScreenHeader } from './ScreenHeader';
 import { calcResult } from '../lib/calc';
@@ -59,7 +58,10 @@ function StarBox({
           onFocus={(e) => {
             onActivate();
             setDraft(String(value));
-            requestAnimationFrame(() => e.target.select());
+            const input = e.target;
+            requestAnimationFrame(() => {
+              if (document.activeElement === input) input.select();
+            });
           }}
           onBlur={() => setDraft(null)}
           onChange={(e) => {
@@ -175,7 +177,7 @@ export function Calculator() {
       if (ok) {
         setSolved(true);
         sfx.success();
-        confetti({ count: 60 });
+        confetti({ particleCount: 80 });
         if (ttsOk && prefs.tts !== 'off') speak('Výborně!');
       } else {
         sfx.error();

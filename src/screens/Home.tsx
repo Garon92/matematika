@@ -1,19 +1,18 @@
 import { AREAS, levelsOf, sampleIn, type AreaId } from '../lib/levels';
-
-const areaTitle = (id: AreaId) => AREAS.find((a) => a.id === id)?.title ?? '';
 import { areaStars, recommend, totalStars } from '../lib/progress';
 import { dueCards } from '../lib/srs';
-import { dayStat, visibleStreak } from '../lib/stats';
-import { vocative } from '../lib/format';
 import { opSymbol } from '../lib/notation';
 import { plural } from '../lib/czech';
-import { usePrefs, useSettings, useStore, today } from '../state/store';
+import { greeting } from '../kit';
+import { daily, usePrefs, useSettings, useStore, today } from '../state/store';
 import { href, navigate } from '../router';
 import { Icon, type IconName } from '../ui/Icon';
 import { Mascot } from '../ui/Mascot';
 import { ProgressRing } from '../ui/ProgressRing';
 import { AREA_COLORS, areaStyle } from './areaStyle';
 import { Onboarding } from './Onboarding';
+
+const areaTitle = (id: AreaId) => AREAS.find((a) => a.id === id)?.title ?? '';
 
 function AreaTile({ id }: { id: AreaId }) {
   const prefs = usePrefs();
@@ -57,17 +56,17 @@ export function Home() {
   const prefs = usePrefs();
   const settings = useSettings();
   const progress = useStore('progress');
-  const stats = useStore('stats');
+  useStore('stats'); // re-render after every answer (daily lives outside the store)
   const deck = useStore('deck');
   const onboarded = useStore('onboarded');
   const t = today();
-  const day = dayStat(stats, t);
-  const streak = visibleStreak(stats.streak, t);
+  const doneToday = daily.today();
+  const streak = daily.streak();
   const due = dueCards(deck, t).length;
   const rec = recommend(progress, prefs.unlockAll);
   const stars = totalStars(progress);
-  const name = settings.playerName?.trim();
-  const goalDone = day.correct >= prefs.dailyGoal;
+  const name = settings.playerName?.trim() ?? '';
+  const goalDone = doneToday >= prefs.dailyGoal;
 
   if (!onboarded) return <Onboarding />;
 
@@ -76,7 +75,7 @@ export function Home() {
       <section className="hero">
         <Mascot mood={goalDone ? 'cheer' : 'happy'} size={92} className="hero__mascot" />
         <div className="min-w-0 flex-1">
-          <h1 className="hero__title">Ahoj{name ? `, ${vocative(name)}` : ''}!</h1>
+          <h1 className="hero__title">{greeting(name)}</h1>
           <p className="hero__sub">{goalDone ? 'Dnešní cíl splněn. Jsi hvězda!' : 'Co si dnes spočítáme?'}</p>
         </div>
         <div className="hero__stats">
@@ -90,12 +89,12 @@ export function Home() {
             <b>{stars}</b>
             <span>{plural(stars, 'hvězda', 'hvězdy', 'hvězd')}</span>
           </div>
-          <div className="stat-chip stat-chip--goal" title={`Dnešní cíl: ${prefs.dailyGoal} správně`}>
-            <ProgressRing value={day.correct / prefs.dailyGoal} size={40} stroke={5} color={goalDone ? 'var(--g92-success)' : 'var(--accent)'}>
+          <div className="stat-chip stat-chip--goal" title={`Dnešní cíl: ${prefs.dailyGoal} příkladů`}>
+            <ProgressRing value={doneToday / prefs.dailyGoal} size={40} stroke={5} color={goalDone ? 'var(--g92-success)' : 'var(--accent)'}>
               {goalDone ? <Icon name="check" size={18} className="text-success" /> : <Icon name="target" size={18} className="text-accent-text" />}
             </ProgressRing>
             <b>
-              {Math.min(day.correct, prefs.dailyGoal)}/{prefs.dailyGoal}
+              {Math.min(doneToday, prefs.dailyGoal)}/{prefs.dailyGoal}
             </b>
             <span>dnes</span>
           </div>

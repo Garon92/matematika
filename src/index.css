@@ -1147,16 +1147,6 @@
   }
 }
 
-/* confetti */
-.confetti-canvas {
-  position: fixed;
-  inset: 0;
-  width: 100vw;
-  height: 100vh;
-  pointer-events: none;
-  z-index: var(--g92-z-confetti);
-}
-
 /* ---- small screens ------------------------------------------------------ */
 @media (max-width: 480px) {
   .hero__mascot {
@@ -2002,45 +1992,6 @@
   line-height: 1.2;
 }
 
-/* ==========================================================================
-   Nápověda (help dialog)
-   ========================================================================== */
-.help__intro {
-  display: flex;
-  align-items: center;
-  gap: var(--g92-space-3);
-  margin-bottom: var(--g92-space-3);
-  font-weight: var(--g92-fw-bold);
-}
-.help__list {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
-  gap: var(--g92-space-3);
-  list-style: none;
-  padding: 0;
-}
-.help__list li {
-  display: flex;
-  gap: var(--g92-space-3);
-  font-size: var(--g92-fs-sm);
-  line-height: 1.45;
-}
-.help__icon {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  flex-shrink: 0;
-  border-radius: var(--g92-radius-md);
-  background: var(--accent-soft);
-  color: var(--accent-text);
-}
-.help__keys {
-  margin-top: var(--g92-space-4);
-  font-size: var(--g92-fs-sm);
-  color: var(--g92-text-muted);
-  line-height: 2;
-}
 
 .sym-dot {
   font-size: 1.9em;
@@ -2086,4 +2037,7 @@
   .play-cta__inline-sample {
     display: inline;
   }
+}
+.screen-loading {
+  min-height: 60dvh;
 }

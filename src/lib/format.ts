@@ -56,18 +56,3 @@ export function formatDuration(ms: number): string {
   if (m < 60) return `${m} min ${String(s % 60).padStart(2, '0')} s`;
   return `${Math.floor(m / 60)} h ${m % 60} min`;
 }
-
-/** Czech vocative for greetings (Adámek → Adámku, Ema → Emo, Petr → Petře, Filip → Filipe). */
-export function vocative(name: string): string {
-  const n = name.trim();
-  if (n.length < 2) return n;
-  const lower = n.toLowerCase();
-  const base = n.slice(0, -1);
-  if (/ek$/.test(lower) && n.length > 3) return n.slice(0, -2) + 'ku';
-  if (/ka$/.test(lower) || /a$/.test(lower)) return base + 'o';
-  if (/[eiyíéuoů]$/.test(lower)) return n;
-  if (/[^aeiouyáéíóúůě]r$/.test(lower)) return base + 'ře';
-  if (/[šžčřjcť]$/.test(lower)) return n + 'i';
-  if (/[khg]$/.test(lower)) return n + 'u';
-  return n + 'e';
-}

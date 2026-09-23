@@ -1,4 +1,4 @@
-/** Daily statistics and the day streak. */
+/** Daily statistics (the day streak and daily goal live in the kit's createDaily → g92:matematika:daily). */
 export interface DayStat {
   /** tasks answered */
   solved: number;
@@ -19,10 +19,9 @@ export interface OpStat {
 export interface Stats {
   days: Record<number, DayStat>;
   ops: Record<string, OpStat>;
-  streak: { current: number; best: number; lastDay: number | null };
 }
 
-export const emptyStats = (): Stats => ({ days: {}, ops: {}, streak: { current: 0, best: 0, lastDay: null } });
+export const emptyStats = (): Stats => ({ days: {}, ops: {} });
 
 const emptyDay = (): DayStat => ({ solved: 0, correct: 0, wrong: 0, ms: 0, sessions: 0 });
 
@@ -43,23 +42,11 @@ export function recordAnswer(s: Stats, day: number, op: string, firstTry: boolea
   return { ...s, days: { ...s.days, [day]: d }, ops: { ...s.ops, [op]: o } };
 }
 
-/** Records a finished session and bumps the day streak. */
+/** Records a finished session. */
 export function recordSession(s: Stats, day: number): Stats {
   const d = { ...dayStat(s, day) };
   d.sessions += 1;
-  return { ...s, days: { ...s.days, [day]: d }, streak: bumpStreak(s.streak, day) };
-}
-
-export function bumpStreak(st: Stats['streak'], day: number): Stats['streak'] {
-  if (st.lastDay === day) return st;
-  const current = st.lastDay === day - 1 ? st.current + 1 : 1;
-  return { current, best: Math.max(st.best, current), lastDay: day };
-}
-
-/** Streak as shown today: broken if the last active day is older than yesterday. */
-export function visibleStreak(st: Stats['streak'], today: number): number {
-  if (st.lastDay === null) return 0;
-  return st.lastDay >= today - 1 ? st.current : 0;
+  return { ...s, days: { ...s.days, [day]: d } };
 }
 
 export function totals(s: Stats): { solved: number; correct: number; ms: number; days: number } {

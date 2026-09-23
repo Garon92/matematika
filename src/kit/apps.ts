@@ -175,9 +175,44 @@ export const CATEGORY_LABELS: Record<AppCategory, string> = {
   hub: 'Rozcestník',
 };
 
-/** Apply an app's accent to :root (or another element). */
-export function applyAccent(idOrColor: string, el: HTMLElement | null = typeof document !== 'undefined' ? document.documentElement : null): void {
-  if (!el) return;
+type StyleTarget = { style: { setProperty(name: string, value: string): void } };
+
+/** Apply an app's accent (id or colour) to :root or another element. DOM-free typing so vite.config can import this file. */
+export function applyAccent(idOrColor: string, el?: StyleTarget | null): void {
+  const target = el ?? (globalThis as { document?: { documentElement: StyleTarget } }).document?.documentElement;
+  if (!target) return;
   const color = getApp(idOrColor)?.accent ?? idOrColor;
-  el.style.setProperty('--accent', color);
+  target.style.setProperty('--accent', color);
+}
+
+/** Mix a hex colour with white (t>0) or black (t<0). */
+export function shade(hex: string, t: number): string {
+  const n = hex.replace('#', '');
+  const full = n.length === 3 ? n.split('').map((c) => c + c).join('') : n;
+  const rgb = [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16));
+  const target = t > 0 ? 255 : 0;
+  const k = Math.abs(t);
+  return '#' + rgb.map((c) => Math.round(c + (target - c) * k).toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * Standalone app icon SVG (favicon / PWA icon source): accent gradient tile + white glyph.
+ * maskable → full-bleed square with the glyph inside the safe zone.
+ */
+export function appIconSvg(idOrApp: AppId | G92App, opts: { maskable?: boolean; size?: number } = {}): string {
+  const app = typeof idOrApp === 'string' ? APP_BY_ID[idOrApp] : idOrApp;
+  const size = opts.size ?? 512;
+  const inner = app.icon.replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, '');
+  const light = shade(app.accent, 0.28);
+  const dark = shade(app.accent, -0.18);
+  const glyph = opts.maskable ? 0.5 : 0.62; // share of the tile
+  const scale = (512 * glyph) / 24;
+  const offset = (512 - 24 * scale) / 2;
+  const rx = opts.maskable ? 0 : 116;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 512 512">
+<defs><linearGradient id="g92g-${app.id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${light}"/><stop offset=".55" stop-color="${app.accent}"/><stop offset="1" stop-color="${dark}"/></linearGradient>
+<radialGradient id="g92h-${app.id}" cx=".3" cy=".2" r=".8"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>
+<rect width="512" height="512" rx="${rx}" fill="url(#g92g-${app.id})"/><rect width="512" height="512" rx="${rx}" fill="url(#g92h-${app.id})"/>
+<g transform="translate(${offset.toFixed(2)} ${offset.toFixed(2)}) scale(${scale.toFixed(4)})" color="#fff" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${inner}</g>
+</svg>`;
 }

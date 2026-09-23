@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { emptyDeck, recordWrong, recordRight, dueCards, nextDueIn, INTERVALS } from '../srs';
 import { taskKey } from '../math';
 import type { Task } from '../types';
-import { bumpStreak, emptyStats, recordAnswer, recordSession, visibleStreak, totals } from '../stats';
+import { emptyStats, recordAnswer, recordSession, totals } from '../stats';
 import { buildTasks } from '../session';
 import { mulberry32 } from '../rng';
 import * as g from '../generators';
@@ -41,18 +41,7 @@ describe('mistakes (Leitner)', () => {
   });
 });
 
-describe('stats & streak', () => {
-  it('streak grows on consecutive days and resets after a gap', () => {
-    let s = emptyStats().streak;
-    s = bumpStreak(s, 10);
-    s = bumpStreak(s, 10);
-    s = bumpStreak(s, 11);
-    expect(s.current).toBe(2);
-    expect(visibleStreak(s, 12)).toBe(2);
-    expect(visibleStreak(s, 13)).toBe(0);
-    s = bumpStreak(s, 14);
-    expect(s).toMatchObject({ current: 1, best: 2 });
-  });
+describe('stats', () => {
   it('records answers per day and op', () => {
     let s = emptyStats();
     s = recordAnswer(s, 5, 'add', true, 3000);
@@ -61,7 +50,6 @@ describe('stats & streak', () => {
     expect(s.days[5]).toMatchObject({ solved: 2, correct: 1, wrong: 1, sessions: 1, ms: 12000 });
     expect(s.ops['add']).toEqual({ right: 1, wrong: 1 });
     expect(totals(s)).toMatchObject({ solved: 2, correct: 1, days: 1 });
-    expect(s.streak.current).toBe(1);
   });
 });
 

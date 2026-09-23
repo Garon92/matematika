@@ -58,23 +58,7 @@ it('formats numbers with Czech grouping', () => {
   expect(formatNumber(1234567).replace(/\s/g, ' ')).toBe('1 234 567');
 });
 
-import { vocative, solvedText, questionText, formatDuration } from '../format';
-
-describe('vocative', () => {
-  const cases: [string, string][] = [
-    ['Adámek', 'Adámku'],
-    ['Ema', 'Emo'],
-    ['Anička', 'Aničko'],
-    ['Petr', 'Petře'],
-    ['Filip', 'Filipe'],
-    ['Tomáš', 'Tomáši'],
-    ['Matěj', 'Matěji'],
-    ['Sofie', 'Sofie'],
-    ['Honza', 'Honzo'],
-    ['Adam', 'Adame'],
-  ];
-  for (const [a, b] of cases) it(`${a} → ${b}`, () => expect(vocative(a)).toBe(b));
-});
+import { solvedText, questionText, formatDuration } from '../format';
 
 describe('task texts', () => {
   it('solved and question texts', () => {

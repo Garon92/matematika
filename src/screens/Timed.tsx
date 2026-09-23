@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { sfx } from '../kit';
+import { autoPause, confetti, countdown, sfx, showPause } from '../kit';
 import { TIMED, TIMED_SECONDS, timedById } from '../lib/timed';
 import { makeStream } from '../lib/session';
 import { mulberry32, randomSeed } from '../lib/rng';
@@ -13,7 +13,6 @@ import { href, navigate } from '../router';
 import { Icon } from '../ui/Icon';
 import { Mascot } from '../ui/Mascot';
 import { StarRating } from '../ui/StarRating';
-import { confetti } from '../ui/confetti';
 import { ScreenHeader } from './ScreenHeader';
 import { NotFound } from './NotFound';
 
@@ -49,7 +48,6 @@ function TimedRun({ id }: { id: string }) {
   const def = timedById(id)!;
   const prefs = usePrefs();
   const [phase, setPhase] = useState<Phase>('countdown');
-  const [count, setCount] = useState(3);
   const [left, setLeft] = useState(TIMED_SECONDS * 1000);
   const [score, setScore] = useState(0);
   const [answered, setAnswered] = useState(0);
@@ -60,53 +58,25 @@ function TimedRun({ id }: { id: string }) {
   const [task, setTask] = useState<Task>(() => stream());
   const last = useRef(0);
   const scoreRef = useRef(0);
+  const leftRef = useRef(TIMED_SECONDS * 1000);
+  const pauseOverlay = useRef<ReturnType<typeof showPause> | null>(null);
 
-  // countdown 3-2-1
   useEffect(() => {
-    if (phase !== 'countdown') return;
-    if (count === 0) {
-      sfx.countdown(true);
-      setPhase('play');
-      last.current = performance.now();
-      return;
-    }
-    sfx.countdown();
-    const t = window.setTimeout(() => setCount((c) => c - 1), 700);
-    return () => window.clearTimeout(t);
-  }, [phase, count]);
+    setTask(stream());
+  }, [stream]);
 
-  // clock
+  // 3-2-1 (kit countdown) at the start of every round
   useEffect(() => {
-    if (phase !== 'play') return;
-    last.current = performance.now();
-    let raf = 0;
-    const tick = () => {
-      const now = performance.now();
-      const dt = now - last.current;
-      last.current = now;
-      setLeft((l) => {
-        const n = l - dt;
-        if (n <= 0) {
-          finish();
-          return 0;
-        }
-        return n;
-      });
-      raf = requestAnimationFrame(tick);
+    let cancelled = false;
+    setPhase('countdown');
+    void countdown({ from: 3 }).then(() => {
+      if (!cancelled) setPhase('play');
+    });
+    return () => {
+      cancelled = true;
+      document.querySelectorAll('.g92-countdown').forEach((el) => el.remove());
     };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase]);
-
-  // auto-pause when the tab is hidden
-  useEffect(() => {
-    const onVis = () => {
-      if (document.hidden) setPhase((p) => (p === 'play' ? 'paused' : p));
-    };
-    document.addEventListener('visibilitychange', onVis);
-    return () => document.removeEventListener('visibilitychange', onVis);
-  }, []);
+  }, [round]);
 
   const finish = useCallback(() => {
     setPhase('done');
@@ -116,9 +86,67 @@ function TimedRun({ id }: { id: string }) {
     setResult({ stars, best, isNewBest });
     if (isNewBest || stars === 3) {
       sfx.win();
-      confetti({ count: 120 });
+      confetti({ particleCount: 160, cannons: true });
     } else sfx.levelUp();
   }, [def]);
+
+  // clock
+  useEffect(() => {
+    if (phase !== 'play') return;
+    last.current = performance.now();
+    let raf = 0;
+    const tick = () => {
+      const now = performance.now();
+      leftRef.current = Math.max(0, leftRef.current - (now - last.current));
+      last.current = now;
+      setLeft(leftRef.current);
+      if (leftRef.current <= 0) {
+        finish();
+        return;
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [phase, finish]);
+
+  const restart = useCallback(() => {
+    scoreRef.current = 0;
+    leftRef.current = TIMED_SECONDS * 1000;
+    setScore(0);
+    setAnswered(0);
+    setLeft(TIMED_SECONDS * 1000);
+    setResult(null);
+    setRound((r) => r + 1);
+  }, []);
+
+  const phaseRef = useRef(phase);
+  phaseRef.current = phase;
+  const pause = useCallback(() => {
+    if (phaseRef.current !== 'play' || pauseOverlay.current) return;
+    phaseRef.current = 'paused';
+    setPhase('paused');
+    const o = showPause({
+      subtitle: def.title,
+      stats: [
+        { label: 'Správně', value: scoreRef.current },
+        { label: 'Zbývá', value: `${Math.ceil(leftRef.current / 1000)} s` },
+      ],
+      menuHref: null,
+      menuLabel: 'Jiný závod',
+    });
+    pauseOverlay.current = o;
+    void o.then((choice) => {
+      pauseOverlay.current = null;
+      if (choice === 'resume') setPhase('play');
+      else if (choice === 'restart') restart();
+      else navigate('zavod');
+    });
+  }, [def.title, restart]);
+
+  // auto-pause when the tab is hidden / window loses focus
+  useEffect(() => (phase === 'play' ? autoPause(pause) : undefined), [phase, pause]);
+  useEffect(() => () => pauseOverlay.current?.close('menu'), []);
 
   const onComplete = useCallback(
     (rec: AnswerRecord) => {
@@ -134,33 +162,17 @@ function TimedRun({ id }: { id: string }) {
     [stream],
   );
 
-  const restart = () => {
-    scoreRef.current = 0;
-    setScore(0);
-    setAnswered(0);
-    setLeft(TIMED_SECONDS * 1000);
-    setResult(null);
-    setCount(3);
-    setRound((r) => r + 1);
-    setPhase('countdown');
-  };
-
-  useEffect(() => {
-    setTask(stream());
-  }, [stream]);
-
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (document.querySelector('dialog[open]')) return;
-      if (e.key === 'Escape' || e.key === 'p' || e.key === 'P') {
-        if (phase === 'play') setPhase('paused');
-        else if (phase === 'paused' && e.key !== 'Escape') setPhase('play');
-        else if (phase === 'paused' || phase === 'done' || phase === 'countdown') navigate('zavod');
-      }
+      if (document.querySelector('dialog[open], .g92-overlay')) return;
+      if ((e.key === 'Escape' || e.key === 'p' || e.key === 'P') && phase === 'play') {
+        e.preventDefault();
+        pause();
+      } else if (e.key === 'Escape' && phase === 'done') navigate('zavod');
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [phase]);
+  }, [phase, pause]);
 
   if (phase === 'done' && result) {
     return (
@@ -194,28 +206,6 @@ function TimedRun({ id }: { id: string }) {
   const frac = left / (TIMED_SECONDS * 1000);
   return (
     <div className="screen screen--play timed-run">
-      {(phase === 'countdown' || phase === 'paused') && (
-        <div className="overlay" role="dialog" aria-modal="true" aria-label={phase === 'paused' ? 'Pauza' : 'Odpočet'}>
-          {phase === 'countdown' ? (
-            <div className="countdown" key={count}>
-              {count > 0 ? count : 'Start!'}
-            </div>
-          ) : (
-            <div className="overlay__card g92-card">
-              <Mascot mood="sleep" size={96} />
-              <h2 className="text-3xl font-black">Pauza</h2>
-              <div className="flex flex-wrap justify-center gap-3">
-                <button type="button" className="g92-btn g92-btn--secondary g92-btn--lg" onClick={() => navigate('zavod')}>
-                  Ukončit
-                </button>
-                <button type="button" className="g92-btn g92-btn--lg" onClick={() => setPhase('play')} autoFocus>
-                  <Icon name="play" size={22} /> Pokračovat
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
       <TaskPlayer
         key={`${round}-${taskIdx}`}
         task={task}
@@ -227,7 +217,7 @@ function TimedRun({ id }: { id: string }) {
         onComplete={onComplete}
         toolbar={
           <>
-            <button type="button" className="g92-btn g92-btn--ghost g92-btn--icon" onClick={() => setPhase('paused')} aria-label="Pauza" disabled={phase !== 'play'}>
+            <button type="button" className="g92-btn g92-btn--ghost g92-btn--icon" onClick={pause} aria-label="Pauza (P)" disabled={phase !== 'play'}>
               <Icon name="pause" size={22} />
             </button>
             <div className="min-w-0 flex-1">
