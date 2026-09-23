@@ -40,20 +40,21 @@ export function Free() {
     next();
   };
 
+  const streakRef = useRef(0);
   const onAttempt = useCallback((correct: boolean) => {
-    store.update('free', (f) => ({ ...f, attempts: f.attempts + 1, ok: f.ok + (correct ? 1 : 0) }));
-    if (correct) {
-      setStreak((s) => {
-        const n = s + 1;
-        store.update('free', (f) => ({ ...f, bestStreak: Math.max(f.bestStreak, n) }));
-        if (n > 0 && n % 10 === 0) {
-          sfx.levelUp();
-          confetti({ count: 80 });
-        }
-        return n;
-      });
-    } else setStreak(0);
+    const n = correct ? streakRef.current + 1 : 0;
+    streakRef.current = n;
+    setStreak(n);
+    store.update('free', (f) => ({ ...f, attempts: f.attempts + 1, ok: f.ok + (correct ? 1 : 0), bestStreak: Math.max(f.bestStreak, n) }));
+    if (n > 0 && n % 10 === 0) {
+      sfx.levelUp();
+      confetti({ count: 80 });
+    }
   }, []);
+  const resetStreak = () => {
+    streakRef.current = 0;
+    setStreak(0);
+  };
 
   const onComplete = useCallback(
     (rec: AnswerRecord) => {
@@ -67,7 +68,7 @@ export function Free() {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && !document.querySelector('dialog[open]')) {
         e.preventDefault();
-        setStreak(0);
+        resetStreak();
         next();
       }
     };
@@ -75,10 +76,10 @@ export function Free() {
     return () => window.removeEventListener('keydown', onKey);
   }, [next]);
 
-  const modes: { value: FreeMode; label: string }[] = [
+  const modes: { value: FreeMode; label: React.ReactNode }[] = [
     { value: 'add', label: '+' },
     { value: 'sub', label: '−' },
-    { value: 'mul', label: opSymbol('mul', prefs.notation) },
+    { value: 'mul', label: <span className={prefs.notation === 'school' ? 'sym-dot' : ''}>{opSymbol('mul', prefs.notation)}</span> },
     { value: 'div', label: opSymbol('div', prefs.notation) },
     { value: 'mix', label: 'Mix' },
   ];
@@ -131,7 +132,7 @@ export function Free() {
                 type="button"
                 className="g92-btn g92-btn--ghost g92-btn--sm"
                 onClick={() => {
-                  setStreak(0);
+                  resetStreak();
                   next();
                 }}
                 title="Přeskočit (Esc)"

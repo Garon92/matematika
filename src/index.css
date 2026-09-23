@@ -2041,3 +2041,49 @@
   color: var(--g92-text-muted);
   line-height: 2;
 }
+
+.sym-dot {
+  font-size: 1.9em;
+  line-height: 0;
+}
+.calc-op.sym-dot {
+  font-size: 3.4rem;
+  line-height: 0;
+  padding-bottom: 6px;
+}
+@media (max-width: 640px) {
+  .screen-header__title {
+    font-size: var(--g92-fs-2xl);
+  }
+  .screen-header__sub {
+    font-size: var(--g92-fs-sm);
+    line-height: 1.35;
+  }
+  .screen {
+    gap: var(--g92-space-4);
+  }
+}
+.chart__svg {
+  display: block;
+  max-width: 920px;
+  margin-inline: auto;
+}
+.blocks--big .block-ten {
+  width: 18px;
+  height: 92px;
+  border-radius: 5px;
+  background: repeating-linear-gradient(180deg, var(--accent) 0 8px, var(--accent-strong) 8px 9.2px);
+}
+.blocks--big .block-unit {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+}
+.play-cta__inline-sample {
+  display: none;
+}
+@media (max-width: 480px) {
+  .play-cta__inline-sample {
+    display: inline;
+  }
+}

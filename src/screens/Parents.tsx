@@ -76,19 +76,30 @@ function DaysChart() {
   const t = today();
   const days = Array.from({ length: 14 }, (_, i) => t - 13 + i);
   const data = days.map((d) => ({ d, ...dayStat(stats, d) }));
-  const max = Math.max(5, ...data.map((x) => x.solved));
-  const W = 700;
-  const H = 200;
+  const peak = Math.max(4, ...data.map((x) => x.solved));
+  const nice = [4, 10, 20, 40, 60, 100, 200, 400, 1000];
+  const max = nice.find((v) => v >= peak) ?? Math.ceil(peak / 100) * 100;
+  const figRef = useRef<HTMLElement>(null);
+  const [fw, setFw] = useState(760);
+  useEffect(() => {
+    const el = figRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setFw(Math.max(280, Math.min(920, el.clientWidth))));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const W = fw;
+  const H = 210;
   const padL = 30;
   const padB = 28;
   const padT = 10;
   const bw = (W - padL) / days.length;
   const barW = Math.min(30, bw * 0.62);
   const y = (v: number) => padT + (H - padT - padB) * (1 - v / max);
-  const ticks = [0, Math.round(max / 2), max];
+  const ticks = [0, max / 2, max];
   const [showTable, setShowTable] = useState(false);
   return (
-    <figure className="chart">
+    <figure className="chart" ref={figRef}>
       <figcaption className="chart__legend">
         <span>
           <i style={{ background: 'var(--g92-success)' }} /> Správně napoprvé

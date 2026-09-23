@@ -111,7 +111,7 @@ export function TaskView({ task, input, phase, notation, onField }: {
     case 'place':
       return (
         <div className="flex flex-col items-center gap-4">
-          <Blocks values={[task.tens * 10 + task.units]} compact />
+          <Blocks values={[task.tens * 10 + task.units]} compact showValue={false} big />
           <div className="expr expr--small flex-wrap">
             <span className="place-label">
               {task.tens} {plural(task.tens, 'desítka', 'desítky', 'desítek')} a {task.units} {plural(task.units, 'jednotka', 'jednotky', 'jednotek')} =

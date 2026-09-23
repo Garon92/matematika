@@ -47,13 +47,14 @@ export function Session({ source }: { source: SessionSource }) {
   }, [source.kind, level?.id, round]);
   const [index, setIndex] = useState(0);
   const [records, setRecords] = useState<AnswerRecord[]>([]);
-  const [started] = useState(() => performance.now());
+  const [started, setStarted] = useState(() => performance.now());
   const [result, setResult] = useState<null | { stars: 0 | 1 | 2 | 3; firstTry: number; ms: number; before: number; after: number }>(null);
 
   useEffect(() => {
     setIndex(0);
     setRecords([]);
     setResult(null);
+    setStarted(performance.now());
   }, [round]);
 
   const backHref = source.kind === 'level' && level ? `oblast/${level.area}` : source.kind === 'mistakes' ? 'chyby' : '';
@@ -102,7 +103,11 @@ export function Session({ source }: { source: SessionSource }) {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !document.querySelector('dialog[open]')) void leave();
+      if (e.key === 'Escape' && !document.querySelector('dialog[open]')) {
+        // keep the key from immediately cancelling the confirm dialog we are about to open
+        e.preventDefault();
+        window.setTimeout(() => void leave(), 0);
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);

@@ -75,9 +75,9 @@ function NumberLine({ h }: { h: Extract<Hint, { type: 'line' }> }) {
 }
 
 /** Base-ten blocks: tens as bars of 10, units as squares. */
-export function Blocks({ values, compact = false }: { values: number[]; compact?: boolean }) {
+export function Blocks({ values, compact = false, showValue = true, big = false }: { values: number[]; compact?: boolean; showValue?: boolean; big?: boolean }) {
   return (
-    <div className={`flex items-end justify-center ${compact ? 'gap-4' : 'gap-8'}`}>
+    <div className={`flex items-end justify-center ${compact ? 'gap-4' : 'gap-8'} ${big ? 'blocks--big' : ''}`}>
       {values.map((v, i) => {
         const tens = Math.floor(v / 10);
         const units = v % 10;
@@ -93,7 +93,7 @@ export function Blocks({ values, compact = false }: { values: number[]; compact?
                 ))}
               </span>
             </div>
-            <span className="text-lg font-extrabold tabular-nums">{v}</span>
+            {showValue && <span className="text-lg font-extrabold tabular-nums">{v}</span>}
           </div>
         );
       })}

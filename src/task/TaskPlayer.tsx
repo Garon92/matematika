@@ -214,6 +214,7 @@ export function TaskPlayer({ task, notation, prefs, maxWrong, fast = false, tool
   const mood: Mood = phase === 'correct' ? 'wow' : phase === 'wrong' ? 'oops' : phase === 'revealed' ? 'think' : 'happy';
   const showTts = ttsOk && prefs.tts !== 'off';
   const e = expected(task);
+  if (import.meta.env.DEV) (window as unknown as { __mat?: unknown }).__mat = { task, expected: e, phase };
 
   return (
     <div className="player">

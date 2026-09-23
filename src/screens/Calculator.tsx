@@ -131,17 +131,22 @@ export function Calculator() {
       if (document.querySelector('dialog[open]')) return;
       const key = active;
       const cur = s[key];
-      if (s.guess && /^[0-9]$/.test(e.key)) {
-        pressAnswer(e.key as PadKey);
-        return;
-      }
-      if (s.guess && e.key === 'Backspace') {
-        pressAnswer('back');
-        return;
-      }
-      if (s.guess && e.key === 'Enter') {
-        pressAnswer('ok');
-        return;
+      if (s.guess && res.value !== null && !solved) {
+        if (/^[0-9]$/.test(e.key)) {
+          e.preventDefault();
+          pressAnswer(e.key as PadKey);
+          return;
+        }
+        if (e.key === 'Backspace') {
+          e.preventDefault();
+          pressAnswer('back');
+          return;
+        }
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          pressAnswer('ok');
+          return;
+        }
       }
       if (e.key === 'ArrowUp') update({ [key]: clampStars(cur + 1) });
       else if (e.key === 'ArrowDown') update({ [key]: clampStars(cur - 1) });
@@ -201,7 +206,15 @@ export function Calculator() {
 
       <div className="calc-toolbar">
         <Segmented className="lg:hidden" label="Rozložení hvězd" value={s.mode} onChange={(v) => update({ mode: v })} options={LAYOUTS} />
-        <button type="button" className="g92-chip" aria-pressed={s.guess} onClick={() => update({ guess: !s.guess })}>
+        <button
+          type="button"
+          className="g92-chip"
+          aria-pressed={s.guess}
+          onClick={() => {
+            if (document.activeElement instanceof HTMLInputElement) document.activeElement.blur();
+            update({ guess: !s.guess });
+          }}
+        >
           <Icon name={s.guess ? 'eyeOff' : 'eye'} size={18} /> Hádej výsledek
         </button>
         {s.guess && (
@@ -222,7 +235,7 @@ export function Calculator() {
         <StarBox label="A" value={s.a} onChange={(v) => update({ a: v })} active={active === 'a'} onActivate={() => setActive('a')} tone="a" mode={s.mode} seed={101} />
         <div className="calc-ops" role="group" aria-label="Počítání">
           {ops.map((o) => (
-            <button key={o} type="button" className={`calc-op ${o === s.op ? 'is-active' : ''}`} aria-pressed={o === s.op} onClick={() => update({ op: o })} aria-label={opWord(o)}>
+            <button key={o} type="button" className={`calc-op ${o === s.op ? 'is-active' : ''} ${o === 'mul' && prefs.notation === 'school' ? 'sym-dot' : ''}`} aria-pressed={o === s.op} onClick={() => update({ op: o })} aria-label={opWord(o)}>
               {opSymbol(o, prefs.notation)}
             </button>
           ))}

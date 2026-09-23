@@ -23,7 +23,7 @@ function AreaTile({ id }: { id: AreaId }) {
   const count = levelsOf(id).length;
   return (
     <a href={href(`oblast/${id}`)} className="area-tile g92-accent" style={areaStyle(id)}>
-      <span className={`area-tile__symbol ${area.symbol.length > 2 ? 'is-long' : ''} ${area.symbol === '·' ? 'is-dot' : ''}`} aria-hidden="true">
+      <span className={`area-tile__symbol ${area.symbol.length > 2 ? 'is-long' : ''} ${area.symbol === '·' && prefs.notation === 'school' ? 'is-dot' : ''}`} aria-hidden="true">
         {id === 'mul' ? opSymbol('mul', prefs.notation) : id === 'div' ? opSymbol('div', prefs.notation) : area.symbol}
       </span>
       <span className="area-tile__body">
@@ -109,7 +109,8 @@ export function Home() {
         <span className="min-w-0 text-left">
           <span className="play-cta__label">Hrát</span>
           <span className="play-cta__level">
-            {areaTitle(rec.area)}: {rec.title}
+            {rec.title.startsWith(areaTitle(rec.area)) ? rec.title : `${areaTitle(rec.area)}: ${rec.title}`}
+            <span className="play-cta__inline-sample"> · {sampleIn(rec.sample, prefs.notation)}</span>
           </span>
         </span>
         <span className="play-cta__sample g92-accent tabular-nums" style={{ ['--accent' as string]: AREA_COLORS[rec.area] }} aria-hidden="true">

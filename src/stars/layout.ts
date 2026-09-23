@@ -81,7 +81,13 @@ function bestCandidate(n: number, aspect: number, seed: number): Sampler {
   const { us, vs, rng } = s;
   while (us.length < n) {
     const m = us.length;
-    const k = m < 20 ? 30 : 14;
+    if (m === 0) {
+      // the first star goes somewhere off-centre, the greedy sampler then spreads the rest
+      us.push((0.18 + rng() * 0.64) * aspect);
+      vs.push(0.18 + rng() * 0.64);
+      continue;
+    }
+    const k = m < 20 ? 40 : 14;
     let bestU = 0;
     let bestV = 0;
     let bestD = -1;
@@ -89,7 +95,8 @@ function bestCandidate(n: number, aspect: number, seed: number): Sampler {
       const u = rng() * aspect;
       const v = rng();
       // distance to walls counts too (half weight) so stars don't hug the edge
-      let d = Math.min(u, aspect - u, v, 1 - v) * 2;
+      // wall distance ×2.2 ≈ a mirrored neighbour: stars may sit about half a spacing from the edge
+      let d = Math.min(u, aspect - u, v, 1 - v) * 2.2;
       d = d * d;
       for (let i = 0; i < m; i++) {
         const du = us[i]! - u;
@@ -133,7 +140,7 @@ function scatter(input: LayoutInput): Layout {
   const ys = new Float32Array(n);
   const area = iw * ih;
   const maxR = input.maxR ?? 26;
-  let r = Math.max(1.4, Math.min(maxR, 0.3 * Math.sqrt(area / Math.max(1, n))));
+  let r = Math.max(1.4, Math.min(maxR, 0.24 * Math.sqrt(area / Math.max(1, n)), Math.min(iw, ih) / 9));
   if (n <= BEST_CANDIDATE_MAX) {
     const aspect = iw / ih;
     const s = bestCandidate(n, aspect, seed);
@@ -142,6 +149,16 @@ function scatter(input: LayoutInput): Layout {
       xs[i] = pad + m + (s.us[i]! / aspect) * (iw - 2 * m);
       ys[i] = pad + m + s.vs[i]! * (ih - 2 * m);
     }
+    // keep a visible gap between neighbours: radius ≤ 40 % of the closest pair distance
+    let minD2 = Infinity;
+    for (let i = 1; i < n; i++)
+      for (let j = 0; j < i; j++) {
+        const dx = xs[i]! - xs[j]!;
+        const dy = ys[i]! - ys[j]!;
+        const d2 = dx * dx + dy * dy;
+        if (d2 < minD2) minD2 = d2;
+      }
+    if (Number.isFinite(minD2)) r = Math.max(1.4, Math.min(r, 0.4 * Math.sqrt(minD2)));
   } else {
     // jittered grid, cells picked in a deterministic shuffled order
     const aspect = iw / ih;
