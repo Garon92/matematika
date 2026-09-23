@@ -64,14 +64,23 @@ export function TaskView({ task, input, phase, notation, onField }: {
     }
     case 'rem':
       return (
-        <div className="expr expr--long flex-wrap">
-          <span>{task.a}</span>
-          <span className="expr__op">{opSymbol('div', notation)}</span>
-          <span>{task.b}</span>
-          <span className="expr__op">=</span>
-          <Slot text={s.q} phase={phase} active={input.field === 0} onClick={() => onField?.(0)} label="Podíl" />
-          <span className="expr__rem">zb.</span>
-          <Slot text={s.r} phase={phase} active={input.field === 1} onClick={() => onField?.(1)} label="Zbytek" />
+        <div className="rem-view">
+          <div className="expr">
+            <span>{task.a}</span>
+            <span className="expr__op">{opSymbol('div', notation)}</span>
+            <span>{task.b}</span>
+            <span className="expr__op">=</span>
+          </div>
+          <div className="expr expr--rem">
+            <span className="rem-view__part">
+              <Slot text={s.q} phase={phase} active={input.field === 0} onClick={() => onField?.(0)} label="Výsledek" />
+              <small>výsledek</small>
+            </span>
+            <span className="rem-view__part">
+              <Slot text={s.r} phase={phase} active={input.field === 1} onClick={() => onField?.(1)} label="Zbytek" />
+              <small>zbytek</small>
+            </span>
+          </div>
         </div>
       );
     case 'compare':

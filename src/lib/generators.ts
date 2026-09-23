@@ -315,14 +315,16 @@ export function compareExpressions(max: number, ops: readonly Op[] = ['add', 'su
     const left = side(rng, pick(rng, ops));
     const lv = value(left);
     let right: Operand;
+    const same = (x: Operand, y: Operand) => x.kind === 'expr' && y.kind === 'expr' && x.op === y.op && x.a === y.a && x.b === y.b;
     if (chance(rng, 0.35)) {
-      // two expressions
+      // two expressions (never the very same one twice)
       right = side(rng, pick(rng, ops));
+      for (let i = 0; i < 20 && same(right, left); i++) right = side(rng, pick(rng, ops));
       if (chance(rng, 0.3)) {
         // try to make them equal for interesting "=" cases
         for (let i = 0; i < 30; i++) {
           const cand = side(rng, pick(rng, ops));
-          if (value(cand) === lv) {
+          if (value(cand) === lv && !same(cand, left)) {
             right = cand;
             break;
           }

@@ -126,7 +126,20 @@ export function HintView({ hint }: { hint: Hint }) {
         </div>
       );
     case 'blocks':
-      return <Blocks values={hint.values} />;
+      return <Blocks values={hint.values} big />;
+    case 'combo':
+      return (
+        <div className="flex h-full w-full flex-col items-stretch gap-1">
+          <div className="hint-text hint-text--compact">
+            {hint.lines.map((l, i) => (
+              <p key={i}>{l}</p>
+            ))}
+          </div>
+          <div className="min-h-0 flex-1">
+            <HintView hint={hint.hint} />
+          </div>
+        </div>
+      );
     case 'text':
       return (
         <div className="hint-text">

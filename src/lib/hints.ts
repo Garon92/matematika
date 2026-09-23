@@ -14,7 +14,9 @@ export type Hint =
   /** Base-ten blocks for each value (tens as bars, units as dots). */
   | { type: 'blocks'; values: number[] }
   /** Plain text steps. */
-  | { type: 'text'; lines: string[] };
+  | { type: 'text'; lines: string[] }
+  /** Text above a visual hint (word problems). */
+  | { type: 'combo'; lines: string[]; hint: Hint };
 
 /** Splits an addition jump into "to the next ten" + rest when it crosses a ten (8 + 5 → +2, +3). */
 export function addJumps(a: number, b: number): number[] {
@@ -141,8 +143,13 @@ export function hintFor(task: Task): Hint | null {
         ],
       };
     case 'word': {
+      // the key hint of a word problem is the calculation itself, plus the usual picture for small numbers
       const sym = task.op === 'add' ? '+' : task.op === 'sub' ? '−' : task.op === 'mul' ? '·' : ':';
-      return { type: 'text', lines: [`${task.a} ${sym} ${task.b} = ?`] };
+      const lines = [`${task.a} ${sym} ${task.b} = ?`];
+      const c = task.op === 'add' ? task.a + task.b : task.op === 'sub' ? task.a - task.b : task.op === 'mul' ? task.a * task.b : task.a / task.b;
+      const visual = hintFor({ kind: 'expr', op: task.op, a: task.a, b: task.b, c, missing: 'c' });
+      if (visual && (visual.type === 'frames' || (visual.type === 'array' && visual.rows * visual.cols <= 60))) return { type: 'combo', lines, hint: visual };
+      return { type: 'text', lines };
     }
   }
 }
