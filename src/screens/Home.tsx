@@ -10,6 +10,8 @@ import { Icon, type IconName } from '../ui/Icon';
 import { Mascot } from '../ui/Mascot';
 import { ProgressRing } from '../ui/ProgressRing';
 import { StarRating } from '../ui/StarRating';
+import { ProfileChip } from '../ui/Profiles';
+import { activeProfile } from '../state/profiles';
 import { AREA_COLORS, areaStyle } from './areaStyle';
 import { Onboarding } from './Onboarding';
 
@@ -66,7 +68,8 @@ export function Home() {
   const due = dueCards(deck, t).length;
   const rec = recommend(progress, prefs.unlockAll);
   const stars = totalStars(progress);
-  const name = settings.playerName?.trim() ?? '';
+  void settings; // the main profile's name is the shared g92 player name → re-render on change
+  const name = activeProfile().name;
   const goalDone = doneToday >= prefs.dailyGoal;
   const challenge = useStore('challenge');
   const challengeStars = challenge.day === t ? challenge.stars : 0;
@@ -80,6 +83,7 @@ export function Home() {
         <div className="min-w-0 flex-1">
           <h1 className="hero__title">{greeting(name)}</h1>
           <p className="hero__sub">{goalDone ? 'Dnešní cíl splněn. Jsi hvězda!' : 'Co si dnes spočítáme?'}</p>
+          <ProfileChip />
         </div>
         <div className="hero__stats">
           <div className="stat-chip" title="Dny v řadě">

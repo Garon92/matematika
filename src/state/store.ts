@@ -11,6 +11,7 @@ import type { Task } from '../lib/types';
 import type { LayoutMode } from '../stars/layout';
 import type { FreeMode } from '../lib/free';
 import { emptyChallenge, recordChallenge, type ChallengeState } from '../lib/challenge';
+import { activeAppId } from './profiles';
 
 export interface Prefs {
   /** "·" and ":" (school) or "×" and "÷" */
@@ -78,7 +79,10 @@ const defaults = {
 
 export type AppData = typeof defaults;
 
-export const store = createStore<AppData>('matematika', {
+/** Store namespace of the active child profile ("matematika" for the first one). */
+export const APP_NS = activeAppId();
+
+export const store = createStore<AppData>(APP_NS, {
   version: 1,
   defaults,
   // The original app (static HTML) stored nothing in localStorage — nothing to migrate.
@@ -106,7 +110,7 @@ export function setPrefs(patch: Partial<Prefs>): void {
 }
 
 /** Daily goal + day streak (kit; the menu reads g92:matematika:daily for its chips). */
-export const daily = createDaily('matematika', { goal: DEFAULT_PREFS.dailyGoal });
+export const daily = createDaily(APP_NS, { goal: DEFAULT_PREFS.dailyGoal });
 {
   const goal = { ...DEFAULT_PREFS, ...store.get('prefs') }.dailyGoal;
   if (daily.goal() !== goal) daily.setGoal(goal);
@@ -196,7 +200,7 @@ export function submitTimed(id: string, score: number, stars: number): { isNewBe
   return { isNewBest, best: rec.best };
 }
 
-const DAILY_KEY = 'g92:matematika:daily';
+const DAILY_KEY = `g92:${APP_NS}:daily`;
 
 export function resetAll(): void {
   store.reset();

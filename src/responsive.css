@@ -1,5 +1,120 @@
 /* Small / short screens and phones in landscape — loaded after index.css */
 
+/* child profiles */
+.profile-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  margin-top: 8px;
+  padding: 2px 14px 2px 4px;
+  border-radius: var(--g92-radius-pill);
+  border: 2px solid var(--accent-border);
+  background: var(--g92-surface);
+  box-shadow: var(--g92-shadow-1);
+  color: var(--g92-text-muted);
+  font-weight: var(--g92-fw-bold);
+}
+.profile-chip:hover {
+  border-color: var(--accent);
+}
+.profile-chip__avatar {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  font-size: 22px;
+}
+.profile-chip__name {
+  color: var(--g92-text);
+  font-weight: var(--g92-fw-black);
+  max-width: 9em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.profile-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--g92-space-3);
+}
+.profile-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: var(--g92-space-4) var(--g92-space-3);
+  border-radius: var(--g92-radius-xl);
+  border: 2px solid var(--g92-border);
+  background: var(--g92-surface-2);
+  transition:
+    transform var(--g92-dur-2) var(--g92-ease-spring),
+    border-color var(--g92-dur-2);
+}
+.profile-card:hover {
+  transform: translateY(calc(-3px * var(--g92-motion)));
+  border-color: var(--accent);
+}
+.profile-card.is-active {
+  border-color: var(--g92-success);
+}
+.profile-card__avatar {
+  display: grid;
+  place-items: center;
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  font-size: 52px;
+  line-height: 1;
+}
+.profile-card__avatar--sm {
+  width: 44px;
+  height: 44px;
+  font-size: 26px;
+  flex-shrink: 0;
+}
+.profile-card__name {
+  font-weight: var(--g92-fw-black);
+  font-size: var(--g92-fs-lg);
+}
+.profile-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--g92-space-2);
+  list-style: none;
+  padding: 0;
+}
+.profile-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--g92-space-2);
+  padding: var(--g92-space-2) var(--g92-space-3);
+  border-radius: var(--g92-radius-md);
+  background: var(--g92-surface-2);
+}
+.avatar-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+  gap: 6px;
+}
+.avatar-opt {
+  display: grid;
+  place-items: center;
+  height: 48px;
+  border-radius: var(--g92-radius-md);
+  border: 2px solid transparent;
+  background: var(--g92-surface-2);
+  font-size: 26px;
+}
+.avatar-opt.is-active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
 /* "Výzva dne" card on Home */
 .daily-card {
   display: flex;

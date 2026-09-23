@@ -12,6 +12,7 @@ import { navigate } from '../router';
 import { Icon } from '../ui/Icon';
 import { StarRating } from '../ui/StarRating';
 import { PrefsForm } from './AppSettings';
+import { ProfilesManager } from '../ui/Profiles';
 import { ScreenHeader } from './ScreenHeader';
 import { AREA_COLORS } from './areaStyle';
 
@@ -299,6 +300,13 @@ function Overview() {
             );
           })}
         </div>
+      </section>
+
+      <section className="g92-card" aria-labelledby="h-kids">
+        <h2 id="h-kids" className="mb-3 text-lg font-black">
+          Děti
+        </h2>
+        <ProfilesManager />
       </section>
 
       <section className="g92-card" aria-labelledby="h-prefs">

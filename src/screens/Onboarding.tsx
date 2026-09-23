@@ -1,19 +1,19 @@
 import { useState } from 'react';
-import { setSettings, sfx } from '../kit';
+import { sfx } from '../kit';
 import { START_POINTS, unlockUpTo } from '../lib/progress';
 import { sampleIn } from '../lib/levels';
-import { setPrefs, store, usePrefs, useSettings } from '../state/store';
+import { setPrefs, store, usePrefs } from '../state/store';
+import { activeProfile, activeProfileId, updateProfile } from '../state/profiles';
 import { speak, useTts } from '../state/tts';
 import { Mascot } from '../ui/Mascot';
 import { Icon } from '../ui/Icon';
 import { SwitchRow } from '../ui/Segmented';
 
 export function Onboarding() {
-  const settings = useSettings();
   const prefs = usePrefs();
   const tts = useTts();
   const [step, setStep] = useState(0);
-  const [name, setName] = useState(settings.playerName ?? '');
+  const [name, setName] = useState(() => activeProfile().name);
 
   const finish = (startId: string | null) => {
     if (startId) store.update('progress', (p) => unlockUpTo(p, startId));
@@ -33,7 +33,7 @@ export function Onboarding() {
             onSubmit={(e) => {
               e.preventDefault();
               const n = name.trim();
-              if (n !== (settings.playerName ?? '')) setSettings({ playerName: n });
+              if (n !== activeProfile().name) updateProfile(activeProfileId(), { name: n });
               sfx.pop();
               setStep(1);
             }}
