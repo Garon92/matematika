@@ -72,6 +72,9 @@ describe('star calculator', () => {
     const r = calcResult(17, 5, 'div', 'scatter');
     expect(r.value).toBe(3);
     expect(r.remainder).toBe(2);
+    expect(r.segments[1]).toEqual({ n: 2, tone: 'c' });
+    expect(r.message).toBe('Zbytek 2 – zbyly 2 růžové hvězdy.');
+    expect(calcResult(16, 5, 'div', 'scatter').message).toBe('Zbytek 1 – zbyla 1 růžová hvězda.');
   });
   it('multiplication uses an array when grouping is on', () => {
     const r = calcResult(4, 6, 'mul', 'ten');

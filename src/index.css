@@ -1161,6 +1161,14 @@
   flex: 1 1 200px;
   max-width: 420px;
 }
+.results__actions .results__home {
+  flex: 1 1 100%;
+  min-height: 48px;
+}
+.results__next small {
+  font-size: var(--g92-fs-xs);
+  font-weight: var(--g92-fw-bold);
+}
 .star-pop {
   display: inline-block;
   animation: star-pop 0.6s var(--g92-ease-spring) both;
@@ -1225,7 +1233,7 @@
 .sky-card__stars {
   position: absolute !important;
   /* keep stars out from under the number (top) and the place-value chips (bottom) */
-  inset: clamp(64px, 12vh, 104px) 0 40px 0;
+  inset: clamp(64px, 12vh, 104px) 0 10px 0;
 }
 .sky-card__stars.is-full {
   inset: 0;
@@ -1746,10 +1754,13 @@
   line-height: 1;
   color: var(--accent-text);
 }
+.free-screen {
+  position: relative;
+}
 .free-panel {
   position: absolute;
-  top: calc(100% + 8px);
-  left: 0;
+  top: 68px;
+  left: max(var(--g92-space-3), env(safe-area-inset-left));
   z-index: 30;
   width: min(380px, calc(100vw - 32px));
   display: flex;
@@ -1789,10 +1800,11 @@
   flex: 1;
 }
 .free-score {
-  display: flex;
-  flex-wrap: wrap;
+  display: inline-flex;
+  flex-wrap: nowrap;
   align-items: center;
-  gap: 4px 12px;
+  gap: 3px;
+  white-space: nowrap;
   font-size: var(--g92-fs-sm);
   color: var(--g92-text-muted);
   font-weight: var(--g92-fw-bold);

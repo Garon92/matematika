@@ -40,6 +40,8 @@ export function useStarGestures(ref: React.RefObject<HTMLElement | null>, onStep
       if (e.pointerType === 'mouse' && e.button !== 0) return;
       pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
       if (pointers.size === 1) {
+        // touch drags are not followed by a click — never let a stale flag eat the next real tap
+        swallowClick = false;
         lastY = e.clientY;
         startX = e.clientX;
         startY = e.clientY;
@@ -83,6 +85,8 @@ export function useStarGestures(ref: React.RefObject<HTMLElement | null>, onStep
     };
     const onUp = (e: PointerEvent) => {
       pointers.delete(e.pointerId);
+      // a mouse click (if any) is dispatched right after pointerup; clear the flag after it
+      if (swallowClick) window.setTimeout(() => (swallowClick = false), 0);
       if (pointers.size === 1) {
         const [p] = [...pointers.values()];
         lastY = p!.y;

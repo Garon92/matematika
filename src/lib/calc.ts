@@ -1,7 +1,7 @@
 import type { LayoutMode } from '../stars/layout';
 import type { Segment } from '../stars/render';
 import type { Op } from './types';
-import { formatNumber } from './czech';
+import { formatNumber, plural } from './czech';
 
 export const MAX_STARS = 10_000_000;
 
@@ -46,10 +46,10 @@ export function calcResult(a: number, b: number, op: Op, mode: LayoutMode): Calc
         remainder: r,
         segments: [
           { n: q, tone: 'a' },
-          { n: r, tone: 'dim' },
+          { n: r, tone: 'c' },
         ],
         total: q + r,
-        message: r > 0 ? `Zbytek ${formatNumber(r)} – ${r === 1 ? 'světlá hvězda zbyla' : 'světlé hvězdy zbyly'}.` : null,
+        message: r > 0 ? `Zbytek ${formatNumber(r)} – ${plural(r, 'zbyla 1 růžová hvězda', `zbyly ${r} růžové hvězdy`, `zbylo ${formatNumber(r)} růžových hvězd`)}.` : null,
         mode,
       };
     }

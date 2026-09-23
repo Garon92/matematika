@@ -74,102 +74,110 @@ export function Sky() {
   const eff = effectiveMode(mode, count);
   const pv = count < 10_000 ? placeValue(count) : null;
   const words = numberToWords(count);
+  const formatted = formatNumber(count);
 
   return (
     <div className="g92-main screen sky-screen">
       <ScreenHeader title="Hvězdné nebe" subtitle="Přidávej hvězdy tlačítky, kolečkem nebo tažením prstem nahoru a dolů.">
-        <Segmented className="sky-layouts hidden md:inline-flex" label="Rozložení hvězd" value={mode} onChange={(v) => setMode(v)} options={LAYOUTS} />
+        <Segmented className="sky-layouts sky-layouts--header" label="Rozložení hvězd" value={mode} onChange={(v) => setMode(v)} options={LAYOUTS} />
       </ScreenHeader>
 
-      <div className="sky-card night-sky" ref={sky} tabIndex={0} aria-label={`Obloha: ${count} ${starsWord(count)}. Šipkami nahoru a dolů přidáš nebo ubereš.`}>
-        <div className="sky-card__head">
-          <button type="button" className="sky-count" onClick={() => setHidden((h) => !h)} title={hidden ? 'Ukázat číslo' : 'Schovat číslo (hádej, kolik jich je)'}>
-            <span className="sky-count__num tabular-nums">{hidden ? '?' : formatNumber(count)}</span>
-            {!hidden && <span className="sky-count__words">{words}</span>}
-          </button>
-          <div className="flex gap-2">
-            {ttsOk && !hidden && (
-              <button type="button" className="sky-btn" onClick={() => speak(`${words} ${starsWord(count)}`)} aria-label="Přečíst číslo">
-                <Icon name="speaker" size={22} />
-              </button>
-            )}
-            <button type="button" className="sky-btn" onClick={() => setHidden((h) => !h)} aria-label={hidden ? 'Ukázat číslo' : 'Schovat číslo'} aria-pressed={hidden}>
-              <Icon name={hidden ? 'eye' : 'eyeOff'} size={22} />
-            </button>
-            <button type="button" className="sky-btn" onClick={() => setSeed(randomSeed() % 100000)} aria-label="Rozházet znovu" title="Rozházet znovu">
-              <Icon name="shuffle" size={22} />
-            </button>
-          </div>
-        </div>
-        <StarCanvas
-          n={count}
-          mode={mode}
-          seed={seed}
-          twinkle
-          className={`sky-card__stars ${count > GL_THRESHOLD ? 'is-full' : ''}`}
-          label={`${count} ${starsWord(count)}`}
-          countable={count <= 200}
-          onCount={countFeedback}
-        />
-        {pv && !hidden && count >= 10 && (
-          <div className="sky-card__pv" aria-hidden="true">
-            {pv.map((p) => (
-              <span key={p.unit}>
-                <b>{p.count}</b> {p.label}
+      <div className="sky-body">
+        <div className="sky-card night-sky" ref={sky} tabIndex={0} aria-label={`Obloha: ${count} ${starsWord(count)}. Šipkami nahoru a dolů přidáš nebo ubereš.`}>
+          <div className="sky-card__head">
+            <button type="button" className="sky-count" onClick={() => setHidden((h) => !h)} title={hidden ? 'Ukázat číslo' : 'Schovat číslo (hádej, kolik jich je)'}>
+              <span className="sky-count__num tabular-nums" data-len={hidden ? 1 : formatted.length}>
+                {hidden ? '?' : formatted}
               </span>
-            ))}
-          </div>
-        )}
-        {eff !== mode && <p className="sky-card__note">Tolik hvězd už se do skupin nevejde – jsou rozházené.</p>}
-        {count === 0 && (
-          <p className="sky-card__empty">
-            <Icon name="plus" size={20} /> Přidej první hvězdu
-          </p>
-        )}
-      </div>
-
-      <div className="sky-controls">
-        <Segmented className="sky-layouts md:hidden" block label="Rozložení hvězd" value={mode} onChange={(v) => setMode(v)} options={LAYOUTS} />
-        <div className="sky-controls__row">
-          <button type="button" className="g92-btn g92-btn--secondary g92-btn--xl pm-btn" aria-label={`Ubrat ${formatNumber(step)}`} {...minus} disabled={count === 0}>
-            <Icon name="minus" size={30} />
-          </button>
-          <label className="sky-input">
-            <span className="g92-sr-only">Počet hvězd</span>
-            <input
-              className="g92-input g92-input--xl text-center tabular-nums"
-              inputMode="numeric"
-              value={draft ?? formatNumber(count)}
-              onChange={(e) => {
-                const v = e.target.value.replace(/\D/g, '').slice(0, 8);
-                setDraft(v);
-                if (v !== '') setCount(clampStars(Number(v)));
-              }}
-              onBlur={() => setDraft(null)}
-              onFocus={(e) => {
-                const input = e.target;
-                setDraft(String(count));
-                requestAnimationFrame(() => {
-                  if (document.activeElement === input) input.select();
-                });
-              }}
-              aria-label="Počet hvězd"
-            />
-          </label>
-          <button type="button" className="g92-btn g92-btn--xl pm-btn" aria-label={`Přidat ${formatNumber(step)}`} {...plus} disabled={count >= MAX_STARS}>
-            <Icon name="plus" size={30} />
-          </button>
-        </div>
-        <div className="sky-steps" role="group" aria-label="Krok">
-          <span className="sky-steps__label">Krok</span>
-          {STEPS.map((s) => (
-            <button key={s} type="button" className="g92-chip" aria-pressed={s === step} onClick={() => setStep(s)}>
-              {s >= 1_000_000 ? '1 milion' : formatNumber(s)}
+              {!hidden && <span className="sky-count__words">{words}</span>}
             </button>
-          ))}
-          <button type="button" className="g92-chip" onClick={() => setCount(0)}>
-            Vynulovat
-          </button>
+            <div className="sky-card__tools">
+              {ttsOk && !hidden && (
+                <button type="button" className="sky-btn" onClick={() => speak(`${words} ${starsWord(count)}`)} aria-label="Přečíst číslo">
+                  <Icon name="speaker" size={22} />
+                </button>
+              )}
+              <button type="button" className="sky-btn" onClick={() => setHidden((h) => !h)} aria-label={hidden ? 'Ukázat číslo' : 'Schovat číslo'} aria-pressed={hidden}>
+                <Icon name={hidden ? 'eye' : 'eyeOff'} size={22} />
+              </button>
+              <button type="button" className="sky-btn" onClick={() => setSeed(randomSeed() % 100000)} aria-label="Rozházet znovu" title="Rozházet znovu">
+                <Icon name="shuffle" size={22} />
+              </button>
+            </div>
+          </div>
+          <StarCanvas
+            n={count}
+            mode={mode}
+            seed={seed}
+            twinkle
+            className={`sky-card__stars ${count > GL_THRESHOLD ? 'is-full' : ''}`}
+            label={`${count} ${starsWord(count)}`}
+            countable={count <= 200}
+            onCount={countFeedback}
+          />
+          {eff !== mode && <p className="sky-card__note">Tolik hvězd už se do skupin nevejde – jsou rozházené.</p>}
+          {count === 0 && (
+            <p className="sky-card__empty">
+              <Icon name="plus" size={20} /> Přidej první hvězdu
+            </p>
+          )}
+        </div>
+
+        <div className="sky-controls">
+          {/* place value lives outside the sky, so it never covers stars */}
+          <div className="sky-pv" aria-hidden={!(pv && !hidden && count >= 10)}>
+            {pv && !hidden && count >= 10 ? (
+              pv.map((p) => (
+                <span key={p.unit}>
+                  <b>{p.count}</b> {p.label}
+                </span>
+              ))
+            ) : (
+              <span className="sky-pv__empty">&nbsp;</span>
+            )}
+          </div>
+          <Segmented className="sky-layouts sky-layouts--controls" block label="Rozložení hvězd" value={mode} onChange={(v) => setMode(v)} options={LAYOUTS} />
+          <div className="sky-controls__row">
+            <button type="button" className="g92-btn g92-btn--secondary g92-btn--xl pm-btn" aria-label={`Ubrat ${formatNumber(step)}`} {...minus} disabled={count === 0}>
+              <Icon name="minus" size={30} />
+            </button>
+            <label className="sky-input">
+              <span className="g92-sr-only">Počet hvězd</span>
+              <input
+                className={`g92-input g92-input--xl text-center tabular-nums ${(draft ?? formatted).length >= 7 ? 'is-long' : ''}`}
+                inputMode="numeric"
+                value={draft ?? formatted}
+                onChange={(e) => {
+                  const v = e.target.value.replace(/\D/g, '').slice(0, 8);
+                  setDraft(v);
+                  if (v !== '') setCount(clampStars(Number(v)));
+                }}
+                onBlur={() => setDraft(null)}
+                onFocus={(e) => {
+                  const input = e.target;
+                  setDraft(String(count));
+                  requestAnimationFrame(() => {
+                    if (document.activeElement === input) input.select();
+                  });
+                }}
+                aria-label="Počet hvězd"
+              />
+            </label>
+            <button type="button" className="g92-btn g92-btn--xl pm-btn" aria-label={`Přidat ${formatNumber(step)}`} {...plus} disabled={count >= MAX_STARS}>
+              <Icon name="plus" size={30} />
+            </button>
+          </div>
+          <div className="sky-steps" role="group" aria-label="Krok">
+            <span className="sky-steps__label">Krok</span>
+            {STEPS.map((s) => (
+              <button key={s} type="button" className="g92-chip" aria-pressed={s === step} onClick={() => setStep(s)}>
+                {s >= 1_000_000 ? '1 milion' : formatNumber(s)}
+              </button>
+            ))}
+            <button type="button" className="g92-chip" onClick={() => setCount(0)}>
+              Vynulovat
+            </button>
+          </div>
         </div>
       </div>
     </div>

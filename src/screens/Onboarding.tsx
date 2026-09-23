@@ -19,6 +19,7 @@ export function Onboarding() {
     if (startId) store.update('progress', (p) => unlockUpTo(p, startId));
     store.set('onboarded', true);
     sfx.levelUp();
+    window.scrollTo(0, 0);
   };
 
   return (
@@ -36,6 +37,7 @@ export function Onboarding() {
               if (n !== activeProfile().name) updateProfile(activeProfileId(), { name: n });
               sfx.pop();
               setStep(1);
+              window.scrollTo(0, 0);
             }}
           >
             <label className="g92-field">
@@ -61,7 +63,7 @@ export function Onboarding() {
         </div>
       ) : (
         <div className="onboarding__card g92-card">
-          <Mascot mood="think" size={96} />
+          <Mascot mood="happy" size={96} />
           <h1 className="onboarding__title">Co už umíš?</h1>
           <p className="g92-muted">Vyber, kde chceš začít. Později můžeš zkusit cokoli.</p>
           <div className="start-grid">

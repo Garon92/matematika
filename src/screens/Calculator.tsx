@@ -201,7 +201,7 @@ export function Calculator() {
       : `${numberToWords(s.a)} ${opWord(s.op)} ${numberToWords(s.b)} je ${numberToWords(res.value)}${res.remainder ? `, zbytek ${numberToWords(res.remainder)}` : ''}.`;
 
   return (
-    <div className="g92-main screen calc-screen">
+    <div className={`g92-main screen calc-screen ${hideC ? "is-guessing" : ""}`}>
       <ScreenHeader title="Hvězdná kalkulačka" subtitle="Nastav hvězdy v A a B, vyber počítání a podívej se na výsledek.">
         <Segmented className="hidden lg:inline-flex" label="Rozložení hvězd" value={s.mode} onChange={(v) => update({ mode: v })} options={LAYOUTS} />
       </ScreenHeader>
@@ -231,6 +231,11 @@ export function Calculator() {
             <Icon name="shuffle" size={18} /> Nový příklad
           </button>
         )}
+        {hideC && (
+          <button type="button" className="g92-chip" onClick={() => setSolved(true)}>
+            <Icon name="eye" size={18} /> Ukázat výsledek
+          </button>
+        )}
       </div>
 
       <div className="calc-grid">
@@ -247,7 +252,7 @@ export function Calculator() {
           =
         </div>
         <div className={`calc-box calc-box--result ${solved ? 'is-solved' : ''}`}>
-          <div className="calc-box__head calc-box__head--result">
+          <div className="calc-box__head calc-box__head--result" hidden={hideC}>
             <span className="calc-result tabular-nums" aria-live="polite">
               {res.value === null ? '–' : hideC ? '?' : formatNumber(res.value)}
               {!hideC && res.remainder > 0 && <small> zb. {formatNumber(res.remainder)}</small>}
@@ -258,49 +263,8 @@ export function Calculator() {
               </button>
             )}
           </div>
-          <div className="calc-box__sky night-sky">
-            {hideC ? (
-              <div className="calc-hidden" aria-hidden="true">
-                ?
-              </div>
-            ) : res.value === null || res.segments.length === 0 ? (
-              <p className="calc-msg">{res.message}</p>
-            ) : (
-              <StarCanvas
-                n={res.total}
-                segments={res.segments}
-                mode={res.mode === 'array' ? 'array' : res.mode}
-                rows={res.rows}
-                cols={res.cols}
-                seed={303}
-                className="h-full w-full"
-                label={`Výsledek: ${res.value}`}
-              />
-            )}
-          </div>
-        </div>
-      </div>
-
-      {res.message && res.value !== null && !hideC && <p className="calc-note">{res.message}</p>}
-      {sentence && !hideC && <p className="calc-sentence">{sentence}</p>}
-
-      {s.guess && res.value !== null && (
-        <div className="calc-guess g92-card">
-          {solved ? (
-            <div className="flex flex-wrap items-center justify-center gap-3">
-              <p className="text-2xl font-black text-success">Správně! {formatNumber(res.value)}</p>
-              <button
-                type="button"
-                className="g92-btn g92-btn--lg"
-                onClick={() => {
-                  update(randomTask(s.op));
-                  sfx.pop();
-                }}
-              >
-                Další příklad <Icon name="arrowRight" size={22} />
-              </button>
-            </div>
-          ) : (
+          {hideC ? (
+            // guess mode: the answer pad takes the place of the hidden result stars (no scrolling away from A and B)
             <div className="calc-guess__body">
               <div ref={answerRef} className={`calc-guess__answer ${wrong ? 'is-wrong' : ''}`}>
                 <span className="text-muted">
@@ -309,11 +273,47 @@ export function Calculator() {
                 <b className="tabular-nums">{answer || '?'}</b>
               </div>
               <Numpad onKey={pressAnswer} layout={prefs.numpad} okReady={answer !== ''} />
-              <button type="button" className="g92-btn g92-btn--ghost" onClick={() => setSolved(true)}>
-                Ukázat výsledek
-              </button>
+            </div>
+          ) : (
+            <div className="calc-box__sky night-sky">
+              {res.value === null || res.segments.length === 0 ? (
+                <p className="calc-msg">{res.message}</p>
+              ) : (
+                <StarCanvas
+                  n={res.total}
+                  segments={res.segments}
+                  mode={res.mode === 'array' ? 'array' : res.mode}
+                  rows={res.rows}
+                  cols={res.cols}
+                  seed={303}
+                  className="h-full w-full"
+                  label={`Výsledek: ${res.value}`}
+                />
+              )}
             </div>
           )}
+        </div>
+      </div>
+
+      {/* the message is shown once: in the result box when there are no stars, otherwise here */}
+      {res.message && res.value !== null && res.segments.length > 0 && !hideC && <p className="calc-note">{res.message}</p>}
+      {sentence && !hideC && <p className="calc-sentence">{sentence}</p>}
+
+      {s.guess && solved && res.value !== null && (
+        <div className="calc-guess g92-card">
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <p className="text-2xl font-black text-success">Správně! {formatNumber(res.value)}</p>
+            <button
+              type="button"
+              className="g92-btn g92-btn--lg"
+              onClick={() => {
+                update(randomTask(s.op));
+                sfx.pop();
+              }}
+            >
+              Další příklad <Icon name="arrowRight" size={22} />
+            </button>
+          </div>
         </div>
       )}
     </div>

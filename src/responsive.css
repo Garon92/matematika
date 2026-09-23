@@ -1,5 +1,279 @@
 /* Small / short screens and phones in landscape — loaded after index.css */
 
+/* ---- Hvězdné nebe (QA round) --------------------------------------------- */
+.sky-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--g92-space-3);
+}
+.sky-layouts--header {
+  display: none !important;
+}
+@media (min-width: 900px) and (min-height: 561px) {
+  .sky-layouts--header {
+    display: inline-flex !important;
+  }
+  .sky-layouts--controls {
+    display: none !important;
+  }
+}
+.sky-count {
+  flex: 1;
+  min-width: 0;
+}
+.sky-card__tools {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+/* long numbers shrink instead of running under the round buttons */
+.sky-count__num[data-len='5'],
+.sky-count__num[data-len='6'],
+.sky-count__num[data-len='7'] {
+  font-size: clamp(2.1rem, 1.5rem + 2.6vw, 3.8rem);
+}
+.sky-count__num[data-len='9'],
+.sky-count__num[data-len='10'] {
+  font-size: clamp(1.45rem, 0.9rem + 2.4vw, 3rem);
+}
+.sky-count__words {
+  max-width: 100%;
+  line-height: 1.25;
+}
+.sky-pv {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  min-height: 34px;
+}
+.sky-pv span {
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--g92-surface);
+  border: 1px solid var(--g92-border);
+  color: var(--g92-text-muted);
+  font-weight: var(--g92-fw-bold);
+  font-size: var(--g92-fs-sm);
+}
+.sky-pv b {
+  color: var(--g92-text);
+  font-size: var(--g92-fs-lg);
+}
+.sky-pv .sky-pv__empty {
+  visibility: hidden;
+}
+.sky-input .g92-input.is-long {
+  font-size: 1.3rem;
+}
+@media (max-width: 420px) {
+  .sky-btn {
+    width: 44px;
+    height: 44px;
+  }
+  .pm-btn {
+    width: 64px;
+    min-width: 64px;
+  }
+  .sky-card__head {
+    padding: var(--g92-space-3);
+  }
+}
+
+/* phone in landscape: sky left, controls right — nothing below the fold (MAT-05) */
+@media (orientation: landscape) and (max-height: 560px) {
+  .sky-screen,
+  .calc-screen {
+    padding-top: var(--g92-space-2);
+    padding-bottom: var(--g92-space-2);
+    gap: var(--g92-space-2);
+  }
+  .sky-screen .screen-header__title,
+  .calc-screen .screen-header__title {
+    font-size: var(--g92-fs-xl);
+  }
+  .sky-screen .screen-header__sub,
+  .calc-screen .screen-header__sub {
+    display: none;
+  }
+  .sky-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 290px;
+    height: calc(100dvh - var(--g92-appbar-total) - 100px);
+  }
+  .sky-card {
+    min-height: 0;
+    height: 100%;
+  }
+  .sky-controls {
+    min-height: 0;
+    overflow-y: auto;
+    gap: var(--g92-space-2);
+    padding: 2px 4px 8px;
+  }
+  .sky-controls .g92-segmented {
+    flex-wrap: nowrap;
+  }
+  .sky-controls .g92-segmented > button {
+    min-width: 0;
+    padding-inline: 4px;
+    font-size: var(--g92-fs-xs);
+  }
+  .sky-controls .g92-chip {
+    min-height: 36px;
+    padding-inline: 10px;
+  }
+  .sky-steps {
+    gap: 4px;
+  }
+  .sky-pv {
+    min-height: 30px;
+  }
+  .sky-pv span {
+    padding: 2px 8px;
+  }
+  .sky-controls .pm-btn {
+    width: 56px;
+    min-width: 56px;
+  }
+  .sky-controls .g92-input--xl {
+    min-height: 52px;
+  }
+  .sky-count__num {
+    font-size: 2.2rem;
+  }
+  .sky-count__num[data-len='9'],
+  .sky-count__num[data-len='10'] {
+    font-size: 1.6rem;
+  }
+  .sky-card__stars {
+    inset: 64px 0 8px 0;
+  }
+  .sky-steps__label {
+    display: none;
+  }
+}
+
+/* ---- Hvězdná kalkulačka (QA round) ---------------------------------------- */
+.calc-box--result .calc-guess__body {
+  flex: 1;
+  gap: var(--g92-space-2);
+  padding: var(--g92-space-2) 0 0;
+}
+.calc-box--result .calc-guess__answer {
+  font-size: var(--g92-fs-2xl);
+  text-align: center;
+}
+.calc-box--result .numpad {
+  width: 100%;
+}
+.calc-box--result .numpad__key {
+  height: clamp(44px, 6.5dvh, 60px);
+  font-size: 1.5rem;
+}
+.calc-box__head[hidden] {
+  display: none;
+}
+/* while guessing, A and B get smaller and extras hide so the pad fits on a phone */
+@media (max-width: 899px) {
+  .calc-screen.is-guessing .calc-box:not(.calc-box--result) .calc-box__sky {
+    min-height: 100px;
+  }
+  .calc-screen.is-guessing .screen-header__sub,
+  .calc-screen.is-guessing .calc-toolbar .g92-segmented {
+    display: none;
+  }
+}
+/* phone in landscape: A op B = C in one row, all visible (MAT-05) */
+@media (orientation: landscape) and (max-height: 560px) {
+  .calc-toolbar {
+    flex-wrap: nowrap;
+  }
+  .calc-grid {
+    grid-template-columns: 1fr auto 1fr auto 1fr;
+    grid-template-areas: none;
+    height: calc(100dvh - var(--g92-appbar-total) - 136px);
+    min-height: 200px;
+  }
+  .calc-grid > * {
+    grid-area: auto !important;
+  }
+  .calc-grid > :nth-child(2) {
+    flex-direction: column;
+  }
+  .calc-eq {
+    display: grid;
+    font-size: 2rem;
+  }
+  .calc-box {
+    min-height: 0;
+  }
+  .calc-box__sky,
+  .calc-box--result .calc-box__sky {
+    min-height: 0;
+  }
+  .calc-op {
+    width: 48px;
+    height: 44px;
+    font-size: 1.6rem;
+  }
+  .calc-op.sym-dot {
+    font-size: 2.6rem;
+  }
+  .calc-pm {
+    width: 36px;
+    height: 40px;
+  }
+  .calc-num,
+  .calc-box__head--result {
+    height: 40px;
+    min-height: 40px;
+  }
+  .calc-result {
+    font-size: 1.6rem;
+  }
+  .calc-box--result .calc-guess__body {
+    padding: 0;
+    gap: 4px;
+  }
+  .calc-box--result .calc-guess__answer {
+    font-size: var(--g92-fs-lg);
+  }
+  .calc-box--result .numpad {
+    gap: 4px;
+  }
+  .calc-box--result .numpad__key {
+    height: calc((100dvh - var(--g92-appbar-total) - 136px - 70px) / 4);
+    min-height: 30px;
+    font-size: 1.2rem;
+    border-radius: var(--g92-radius-sm);
+  }
+  .calc-screen.is-guessing .calc-grid {
+    grid-template-columns: 1fr auto 1fr auto 1.25fr;
+  }
+  .calc-note,
+  .calc-sentence {
+    display: none;
+  }
+}
+
+/* ---- in-app "Domů" (distinct from the appbar's Menu arrow) ---------------- */
+.screen-header__up {
+  align-self: flex-start;
+  flex-shrink: 0;
+  min-height: 44px;
+  padding-inline: 12px 14px;
+  gap: 6px;
+}
+@media (max-width: 479px) {
+  .screen-header__up {
+    padding-inline: 10px;
+  }
+  .screen-header__up-label {
+    display: none;
+  }
+}
+
 /* ---- player (QA round) --------------------------------------------------- */
 .player__toolbar {
   display: flex;
@@ -481,18 +755,11 @@
   .expr--rem {
     font-size: clamp(1.6rem, 10vh, 2.6rem);
   }
-  .sky-card {
-    min-height: calc(100dvh - var(--g92-appbar-total) - 40px);
-  }
-  .sky-screen .screen-header__sub {
-    display: none;
-  }
 }
 
 @media (max-width: 520px) {
   .free-score {
-    flex-wrap: nowrap;
-    gap: 8px;
+    gap: 2px;
   }
   .free-score__label,
   .free-skip__text {
@@ -511,6 +778,46 @@
   }
   .free-settings__toggle {
     padding-inline: 10px;
+  }
+}
+
+/* onboarding on a phone in landscape: mascot left, everything else right, no scrolling */
+@media (orientation: landscape) and (max-height: 560px) {
+  .onboarding {
+    min-height: 0;
+    padding-top: var(--g92-space-3);
+  }
+  .onboarding__card {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: start;
+    text-align: left;
+    gap: var(--g92-space-2) var(--g92-space-5);
+    padding: var(--g92-space-4) var(--g92-space-5);
+  }
+  .onboarding__card > .mascot {
+    grid-row: 1 / span 5;
+    width: 72px;
+    height: 72px;
+  }
+  .onboarding__card > * {
+    grid-column: 2;
+  }
+  .onboarding__title {
+    font-size: var(--g92-fs-2xl);
+  }
+  .onboarding__card .start-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .onboarding__card .start-option {
+    padding: var(--g92-space-2);
+  }
+  .onboarding__card .start-option__sample {
+    font-size: var(--g92-fs-lg);
+  }
+  .onboarding__card .g92-input--xl {
+    min-height: 48px;
+    font-size: var(--g92-fs-lg);
   }
 }
 

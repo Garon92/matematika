@@ -4,7 +4,7 @@ import { FREE_MAX, FREE_MIN, FREE_STEP, FreeGenerator, type FreeMode } from '../
 import { mulberry32, randomSeed } from '../lib/rng';
 import { opSymbol } from '../lib/notation';
 import type { ExprTask } from '../lib/types';
-import { recordTask, store, usePrefs, useStore, type AnswerRecord } from '../state/store';
+import { celebrateGoal, recordTask, store, usePrefs, useStore, type AnswerRecord } from '../state/store';
 import { TaskPlayer } from '../task/TaskPlayer';
 import { Segmented } from '../ui/Segmented';
 import { Icon } from '../ui/Icon';
@@ -42,24 +42,35 @@ export function Free() {
   };
 
   const streakRef = useRef(0);
-  const onAttempt = useCallback((correct: boolean) => {
-    const n = correct ? streakRef.current + 1 : 0;
-    streakRef.current = n;
-    setStreak(n);
-    store.update('free', (f) => ({ ...f, attempts: f.attempts + 1, ok: f.ok + (correct ? 1 : 0), bestStreak: Math.max(f.bestStreak, n) }));
-    if (n > 0 && n % 10 === 0) {
-      sfx.levelUp();
-      confetti({ particleCount: 100 });
-    }
-  }, []);
+  const counted = useRef(-1);
+  /** Only the first answer to each example counts ("správně napoprvé z N příkladů"). */
+  const onAttempt = useCallback(
+    (correct: boolean) => {
+      if (counted.current === idx) return;
+      counted.current = idx;
+      const n = correct ? streakRef.current + 1 : 0;
+      streakRef.current = n;
+      setStreak(n);
+      store.update('free', (f) => ({ ...f, attempts: f.attempts + 1, ok: f.ok + (correct ? 1 : 0), bestStreak: Math.max(f.bestStreak, n) }));
+      if (n > 0 && n % 10 === 0) {
+        sfx.levelUp();
+        confetti({ particleCount: 100 });
+      }
+    },
+    [idx],
+  );
   const resetStreak = () => {
     streakRef.current = 0;
     setStreak(0);
   };
 
+  const [goal, setGoal] = useState(false);
   const onComplete = useCallback(
     (rec: AnswerRecord) => {
-      recordTask(rec, null);
+      if (recordTask(rec, null).goalReached) {
+        setGoal(true);
+        celebrateGoal();
+      }
       next();
     },
     [next],
@@ -93,6 +104,32 @@ export function Free() {
   return (
     <div className="screen screen--play free-screen">
       <h1 className="g92-sr-only">Volný trénink</h1>
+      {/* the settings panel lives outside TaskPlayer so it is not remounted with every new task (slider drag) */}
+      {panel && (
+        <div id="free-panel" className="free-panel g92-card" role="group" aria-label="Nastavení tréninku">
+          <p className="free-panel__title">Volný trénink</p>
+          <Segmented label="Počítání" value={saved.mode} onChange={setMode} options={modes} className="free-ops" block />
+          <label className="free-range">
+            <span className="free-range__label">
+              Rozsah: <b>do {saved.max}</b>
+            </span>
+            <input
+              ref={rangeRef}
+              type="range"
+              className="g92-range"
+              min={FREE_MIN}
+              max={FREE_MAX}
+              step={FREE_STEP}
+              value={saved.max}
+              onChange={(e) => setMax(Number(e.target.value))}
+              aria-label="Rozsah čísel"
+            />
+          </label>
+          <button type="button" className="g92-btn g92-btn--block" onClick={() => setPanel(false)}>
+            Hotovo
+          </button>
+        </div>
+      )}
       <TaskPlayer
         key={idx}
         task={task}
@@ -103,59 +140,32 @@ export function Free() {
         onComplete={onComplete}
         toolbar={
           <>
-            <button type="button" className="g92-btn g92-btn--ghost g92-btn--icon" onClick={() => navigate('')} aria-label="Zpět domů">
-              <Icon name="back" size={24} />
+            <button type="button" className="g92-btn g92-btn--ghost g92-btn--icon" onClick={() => navigate('')} aria-label="Domů" title="Domů">
+              <Icon name="home" size={24} />
             </button>
-            <div className="free-settings">
-              <button
-                type="button"
-                className="g92-chip free-settings__toggle"
-                aria-expanded={panel}
-                aria-controls="free-panel"
-                onClick={() => setPanel((o) => !o)}
-                title="Počítání a rozsah"
-              >
-                <b className="free-settings__op">{modeLabel}</b> do {saved.max}
-                <Icon name="settings" size={18} />
-              </button>
-              {panel && (
-                <div id="free-panel" className="free-panel g92-card" role="group" aria-label="Nastavení tréninku">
-                  <p className="free-panel__title">Volný trénink</p>
-                  <Segmented label="Počítání" value={saved.mode} onChange={setMode} options={modes} className="free-ops" block />
-                  <label className="free-range">
-                    <span className="free-range__label">
-                      Rozsah: <b>do {saved.max}</b>
-                    </span>
-                    <input
-                      ref={rangeRef}
-                      type="range"
-                      className="g92-range"
-                      min={FREE_MIN}
-                      max={FREE_MAX}
-                      step={FREE_STEP}
-                      value={saved.max}
-                      onChange={(e) => setMax(Number(e.target.value))}
-                      aria-label="Rozsah čísel"
-                    />
-                  </label>
-                  <button type="button" className="g92-btn g92-btn--block" onClick={() => setPanel(false)}>
-                    Hotovo
-                  </button>
-                </div>
-              )}
-            </div>
-            <div className="free-score" aria-live="polite">
-              <span title="Správně">
-                <Icon name="check" size={16} /> <b>{saved.ok}</b>
-                <span className="free-score__label">/ {saved.attempts} pokusů</span>
-              </span>
-              <span title="Série správných odpovědí">
-                <Icon name="flame" size={16} /> <b>{streak}</b>
-              </span>
-            </div>
             <button
               type="button"
-              className="g92-btn g92-btn--ghost g92-btn--sm free-skip"
+              className="g92-chip free-settings__toggle"
+              aria-expanded={panel}
+              aria-controls="free-panel"
+              onClick={() => setPanel((o) => !o)}
+              title="Počítání a rozsah"
+            >
+              <b className="free-settings__op">{modeLabel}</b> do {saved.max}
+              <Icon name="settings" size={18} />
+            </button>
+            <span className="free-score" aria-live="polite" title={`Správně napoprvé ${saved.ok} z ${saved.attempts}`}>
+              <Icon name="check" size={16} />
+              <b>{saved.ok}</b>
+              <span>z {saved.attempts}</span>
+              {goal && <span className="free-goal">🎯</span>}
+            </span>
+            <span className="free-score" title="Série správných odpovědí">
+              <Icon name="flame" size={16} /> <b>{streak}</b>
+            </span>
+            <button
+              type="button"
+              className="g92-btn g92-btn--ghost g92-btn--icon free-skip"
               onClick={() => {
                 resetStreak();
                 next();
@@ -163,8 +173,7 @@ export function Free() {
               title="Přeskočit (Esc)"
               aria-label="Přeskočit příklad"
             >
-              <span className="free-skip__text">Přeskočit</span>
-              <Icon name="arrowRight" size={20} />
+              <Icon name="skip" size={22} />
             </button>
           </>
         }

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { autoPause, confetti, countdown, sfx, showPause } from '../kit';
+import { autoPause, clearConfetti, confetti, countdown, sfx, showPause } from '../kit';
 import { TIMED, TIMED_SECONDS, timedById } from '../lib/timed';
 import { makeStream } from '../lib/session';
 import { mulberry32, randomSeed } from '../lib/rng';
@@ -7,7 +7,7 @@ import { timedStars } from '../lib/scoring';
 import { sampleIn } from '../lib/levels';
 import { plural } from '../lib/czech';
 import type { Task } from '../lib/types';
-import { recordTask, submitTimed, usePrefs, useStore, type AnswerRecord } from '../state/store';
+import { celebrateGoal, recordTask, submitTimed, usePrefs, useStore, type AnswerRecord } from '../state/store';
 import { TaskPlayer } from '../task/TaskPlayer';
 import { href, navigate } from '../router';
 import { Icon } from '../ui/Icon';
@@ -65,15 +65,22 @@ function TimedRun({ id }: { id: string }) {
     setTask(stream());
   }, [stream]);
 
-  // 3-2-1 (kit countdown) at the start of every round
+  // 3-2-1 (kit countdown) at the start of every round; if the child leaves during it, the race starts paused
   useEffect(() => {
     let cancelled = false;
+    let leftDuringCountdown = false;
     setPhase('countdown');
+    const stopWatching = autoPause(() => (leftDuringCountdown = true));
     void countdown({ from: 3 }).then(() => {
-      if (!cancelled) setPhase('play');
+      stopWatching();
+      if (cancelled) return;
+      phaseRef.current = 'play';
+      setPhase('play');
+      if (leftDuringCountdown || document.hidden) window.setTimeout(() => pauseRef.current(), 0);
     });
     return () => {
       cancelled = true;
+      stopWatching();
       document.querySelectorAll('.g92-countdown').forEach((el) => el.remove());
     };
   }, [round]);
@@ -84,6 +91,8 @@ function TimedRun({ id }: { id: string }) {
     const stars = timedStars(s, def.thresholds);
     const { best, isNewBest } = submitTimed(def.id, s, stars);
     setResult({ stars, best, isNewBest });
+    window.scrollTo(0, 0);
+    if (goalRef.current) celebrateGoal();
     if (isNewBest || stars === 3) {
       sfx.win();
       confetti({ particleCount: 160, cannons: true });
@@ -98,7 +107,8 @@ function TimedRun({ id }: { id: string }) {
     const tick = () => {
       const now = performance.now();
       const prevSec = Math.ceil(leftRef.current / 1000);
-      leftRef.current = Math.max(0, leftRef.current - (now - last.current));
+      // never subtract more than a frame-ish step (a hidden tab or a stalled frame must not eat the race)
+      leftRef.current = Math.max(0, leftRef.current - Math.min(now - last.current, 250));
       last.current = now;
       setLeft(leftRef.current);
       const sec = Math.ceil(leftRef.current / 1000);
@@ -120,11 +130,15 @@ function TimedRun({ id }: { id: string }) {
     setAnswered(0);
     setLeft(TIMED_SECONDS * 1000);
     setResult(null);
+    goalRef.current = false;
+    clearConfetti();
     setRound((r) => r + 1);
   }, []);
 
   const phaseRef = useRef(phase);
   phaseRef.current = phase;
+  const pauseRef = useRef<() => void>(() => {});
+  const goalRef = useRef(false);
   const pause = useCallback(() => {
     if (phaseRef.current !== 'play' || pauseOverlay.current) return;
     phaseRef.current = 'paused';
@@ -147,13 +161,26 @@ function TimedRun({ id }: { id: string }) {
     });
   }, [def.title, restart]);
 
+  pauseRef.current = pause;
+
   // auto-pause when the tab is hidden / window loses focus
   useEffect(() => (phase === 'play' ? autoPause(pause) : undefined), [phase, pause]);
+  // …and when the appbar opens help or settings (the child can't answer behind a dialog)
+  useEffect(() => {
+    if (phase !== 'play') return;
+    const onDialog = () => pause();
+    window.addEventListener('g92-help', onDialog);
+    window.addEventListener('g92-settings', onDialog);
+    return () => {
+      window.removeEventListener('g92-help', onDialog);
+      window.removeEventListener('g92-settings', onDialog);
+    };
+  }, [phase, pause]);
   useEffect(() => () => pauseOverlay.current?.close('menu'), []);
 
   const onComplete = useCallback(
     (rec: AnswerRecord) => {
-      recordTask(rec, null);
+      if (recordTask(rec, null).goalReached) goalRef.current = true;
       if (rec.firstTry) {
         scoreRef.current += 1;
         setScore(scoreRef.current);
@@ -190,6 +217,7 @@ function TimedRun({ id }: { id: string }) {
             {def.title} · správně {score} z {answered}
           </p>
           {result.isNewBest ? <p className="g92-badge g92-badge--success">Nový rekord!</p> : <p className="g92-badge g92-badge--neutral">Rekord: {result.best}</p>}
+          {goalRef.current && <p className="g92-badge g92-badge--success">🎯 Denní cíl splněn!</p>}
           <p className="g92-muted text-sm">
             Hvězdy: {def.thresholds[0]} / {def.thresholds[1]} / {def.thresholds[2]} správně
           </p>
@@ -198,8 +226,11 @@ function TimedRun({ id }: { id: string }) {
           <button type="button" className="g92-btn g92-btn--secondary g92-btn--lg" onClick={() => navigate('zavod')}>
             Jiný závod
           </button>
-          <button type="button" className="g92-btn g92-btn--lg" onClick={restart} autoFocus>
-            <Icon name="restart" size={22} /> Znovu
+          <button type="button" ref={(el) => el?.focus({ preventScroll: true })} className="g92-btn g92-btn--lg" onClick={restart}>
+            <Icon name="restart" size={22} /> Hrát znovu
+          </button>
+          <button type="button" className="g92-btn g92-btn--ghost g92-btn--lg results__home" onClick={() => navigate('')}>
+            <Icon name="home" size={22} /> Domů
           </button>
         </div>
       </div>

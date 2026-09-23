@@ -9,7 +9,7 @@ import { openReactSettingsDialog } from './kit/react/dialog';
 import { ErrorBoundary } from './ui/ErrorBoundary';
 import { iconSvg } from './ui/Icon';
 import { reportActivity } from './state/store';
-import { setHelp } from './kit';
+import { clearConfetti, setHelp } from './kit';
 import { areaById, levelById } from './lib/levels';
 
 // less frequent screens are loaded on demand
@@ -97,6 +97,7 @@ export function App() {
 
   useEffect(() => {
     window.scrollTo(0, 0);
+    clearConfetti(); // celebration of the previous screen must not rain over the next task
     document.title = titleFor(route);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);

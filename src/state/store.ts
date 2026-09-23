@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react';
-import { confetti, createDaily, createStore, haptic, readJSON, recordActivity, safeStorage, sfx, toast, writeJSON } from '../kit';
+import { confetti, createDaily, createStore, haptic, readJSON, recordActivity, safeStorage, sfx, writeJSON } from '../kit';
 export { useSettings } from '../kit/react/hooks';
 import { emptyProgress, recordLevel, totalStars, type Progress } from '../lib/progress';
 import { emptyDeck, recordRight, recordWrong, type MistakeDeck } from '../lib/srs';
@@ -131,21 +131,27 @@ export interface AnswerRecord {
 }
 
 /** Called after every finished task (session, timed, free, mistakes). */
-export function recordTask(rec: AnswerRecord, level: string | null, opts: { mistakes: boolean } = { mistakes: true }): void {
+/**
+ * Called after every finished task (session, timed, free, mistakes).
+ * `goalReached` is true exactly when this task completed today's goal — the caller celebrates it
+ * (on the results screen, not with a toast over the buttons).
+ */
+export function recordTask(rec: AnswerRecord, level: string | null, opts: { mistakes: boolean } = { mistakes: true }): { goalReached: boolean } {
   const day = today();
   const d = daily.record(1);
-  if (d.reachedNow) {
-    window.setTimeout(() => {
-      sfx.levelUp();
-      haptic('success');
-      confetti({ particleCount: 120, origin: { x: 0.5, y: 0.3 } });
-      toast(`Denní cíl splněn! ${d.goal} příkladů – jsi hvězda!`, { variant: 'success', icon: '🎯' });
-    }, 400);
-  }
   store.update('stats', (s) => recordAnswer(s, day, taskOp(rec.task), rec.firstTry, rec.ms));
-  if (!opts.mistakes) return;
-  if (!rec.firstTry) store.update('deck', (d) => recordWrong(d, rec.task, level, day));
-  else store.update('deck', (d) => recordRight(d, taskKey(rec.task), day));
+  if (opts.mistakes) {
+    if (!rec.firstTry) store.update('deck', (dk) => recordWrong(dk, rec.task, level, day));
+    else store.update('deck', (dk) => recordRight(dk, taskKey(rec.task), day));
+  }
+  return { goalReached: d.reachedNow };
+}
+
+/** Daily goal celebration (sound, vibration, confetti). */
+export function celebrateGoal(): void {
+  sfx.levelUp();
+  haptic('success');
+  confetti({ particleCount: 120, origin: { x: 0.5, y: 0.3 } });
 }
 
 export function finishLevel(levelId: string, stars: 0 | 1 | 2 | 3, firstTry: number): { before: number; after: number } {

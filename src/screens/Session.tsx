@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { confetti, confirmDialog, sfx } from '../kit';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { clearConfetti, confetti, openDialog, sfx } from '../kit';
 import { levelById, sampleIn } from '../lib/levels';
 import { buildTasks } from '../lib/session';
 import { mulberry32, randomSeed } from '../lib/rng';
@@ -8,7 +8,7 @@ import { starsFor, praise } from '../lib/scoring';
 import { isUnlocked, nextLevel } from '../lib/progress';
 import { solvedText, formatDuration } from '../lib/format';
 import type { Task } from '../lib/types';
-import { finishChallenge, finishLevel, finishSession, recordTask, store, today, usePrefs, type AnswerRecord } from '../state/store';
+import { celebrateGoal, finishChallenge, finishLevel, finishSession, recordTask, store, today, usePrefs, type AnswerRecord } from '../state/store';
 import { challengeTasks } from '../lib/challenge';
 import { TaskPlayer } from '../task/TaskPlayer';
 import { navigate } from '../router';
@@ -35,6 +35,8 @@ export function Session({ source }: { source: SessionSource }) {
   const prefs = usePrefs();
   const level = source.kind === 'level' ? levelById(source.levelId) : undefined;
   const [round, setRound] = useState(0);
+  const goalRef = useRef(false);
+  const primaryRef = useRef<HTMLButtonElement>(null);
   const tasks = useMemo<Task[]>(() => {
     const rng = mulberry32(randomSeed());
     const deck = store.get('deck');
@@ -55,6 +57,7 @@ export function Session({ source }: { source: SessionSource }) {
     setIndex(0);
     setRecords([]);
     setResult(null);
+    goalRef.current = false;
     setStarted(performance.now());
   }, [round]);
 
@@ -62,7 +65,7 @@ export function Session({ source }: { source: SessionSource }) {
 
   const onComplete = useCallback(
     (rec: AnswerRecord) => {
-      recordTask(rec, source.kind === 'level' ? source.levelId : null);
+      if (recordTask(rec, source.kind === 'level' ? source.levelId : null).goalReached) goalRef.current = true;
       const all = [...records, rec];
       setRecords(all);
       if (all.length < tasks.length) {
@@ -88,6 +91,9 @@ export function Session({ source }: { source: SessionSource }) {
 
   useEffect(() => {
     if (!result) return;
+    window.scrollTo(0, 0);
+    primaryRef.current?.focus({ preventScroll: true });
+    if (goalRef.current) celebrateGoal();
     if (result.stars >= 3) {
       sfx.win();
       confetti({ particleCount: 180, cannons: true });
@@ -99,8 +105,16 @@ export function Session({ source }: { source: SessionSource }) {
 
   const leave = useCallback(async () => {
     if (records.length > 0 && !result) {
-      const ok = await confirmDialog({ title: 'Ukončit cvičení?', message: 'Rozpracované příklady se nezapočítají do hvězd.', confirmLabel: 'Ukončit', cancelLabel: 'Pokračovat' });
-      if (!ok) return;
+      // "Pokračovat" is the default (Enter is the answer key, it must never quit by accident)
+      const d = openDialog({
+        title: 'Ukončit cvičení?',
+        content: '<p>Rozpracované příklady se nezapočítají do hvězd.</p>',
+        actions: [
+          { label: 'Ukončit', value: 'leave', variant: 'secondary' },
+          { label: 'Pokračovat', value: 'stay', variant: 'primary', autofocus: true },
+        ],
+      });
+      if ((await d.closed) !== 'leave') return;
     }
     navigate(backHref);
   }, [records.length, result, backHref]);
@@ -137,16 +151,33 @@ export function Session({ source }: { source: SessionSource }) {
     const mistakes = records.filter((r) => !r.firstTry);
     const next = level ? nextLevel(level.id) : null;
     const nextOpen = next && isUnlocked(store.get('progress'), next, prefs.unlockAll);
+    const retryFirst = result.stars === 0 && source.kind !== 'mistakes';
+    const title =
+      source.kind === 'mistakes' ? (mistakes.length === 0 ? 'Chyby jsou pryč!' : 'Dobrá práce!') : praise(result.stars);
+    const replay = (primary: boolean) => (
+      <button
+        type="button"
+        ref={primary ? primaryRef : undefined}
+        className={`g92-btn g92-btn--lg ${primary ? '' : 'g92-btn--secondary'}`}
+        onClick={() => {
+          clearConfetti();
+          setRound((r) => r + 1);
+        }}
+      >
+        <Icon name="restart" size={22} /> Hrát znovu
+      </button>
+    );
     return (
       <div className="g92-main g92-main--narrow screen results">
         <div className="results__hero">
           <Mascot mood={result.stars >= 2 ? 'cheer' : result.stars === 1 ? 'happy' : 'think'} size={112} />
-          <h1 className="results__title">{source.kind === 'mistakes' ? (result.stars >= 2 ? 'Chyby jsou pryč!' : 'Dobrá práce!') : praise(result.stars)}</h1>
+          <h1 className="results__title">{title}</h1>
           {source.kind !== 'mistakes' && <StarRating value={result.stars} size={52} animate />}
           {source.kind === 'daily' && <p className="g92-badge">🏆 Výzva dne {result.stars >= 1 ? 'splněna' : '– zkus to znovu'}</p>}
           <p className="results__stats">
             <b>{result.firstTry}</b> z {records.length} napoprvé · {formatDuration(result.ms)}
           </p>
+          {goalRef.current && <p className="g92-badge g92-badge--success">🎯 Denní cíl splněn!</p>}
           {result.after > result.before && result.before > 0 && <p className="g92-badge g92-badge--success">Nový rekord úrovně!</p>}
           {level && next && result.after >= 1 && result.before === 0 && (
             <p className="g92-badge">
@@ -171,30 +202,42 @@ export function Session({ source }: { source: SessionSource }) {
         )}
 
         <div className="results__actions">
-          {result.stars === 0 && source.kind !== 'mistakes' ? (
+          {retryFirst ? (
+            replay(true)
+          ) : next && nextOpen && result.stars >= 1 ? (
             <>
-              <button type="button" className="g92-btn g92-btn--secondary g92-btn--lg" onClick={() => navigate(backHref)}>
-                Zpět
-              </button>
-              <button type="button" className="g92-btn g92-btn--lg" onClick={() => setRound((r) => r + 1)} autoFocus>
-                <Icon name="restart" size={22} /> Zkusit znovu
+              {replay(false)}
+              <button
+                type="button"
+                ref={primaryRef}
+                className="g92-btn g92-btn--lg results__next"
+                onClick={() => {
+                  clearConfetti();
+                  navigate(`uroven/${next.id}`);
+                }}
+              >
+                <span className="flex flex-col items-start leading-tight">
+                  <span>Další úroveň</span>
+                  <small className="opacity-80">
+                    {next.title} · {sampleIn(next.sample, prefs.notation)}
+                  </small>
+                </span>
+                <Icon name="arrowRight" size={22} />
               </button>
             </>
           ) : (
-            <button type="button" className="g92-btn g92-btn--secondary g92-btn--lg" onClick={() => setRound((r) => r + 1)}>
-              <Icon name="restart" size={22} /> Znovu
-            </button>
+            <>
+              {replay(false)}
+              {backHref !== '' && (
+                <button type="button" ref={primaryRef} className="g92-btn g92-btn--lg" onClick={() => navigate(backHref)}>
+                  {source.kind === 'mistakes' ? 'Chyby k procvičení' : 'Úrovně'} <Icon name="grid" size={22} />
+                </button>
+              )}
+            </>
           )}
-          {result.stars === 0 && source.kind !== 'mistakes' ? null : next && nextOpen && result.stars >= 1 ? (
-            <button type="button" className="g92-btn g92-btn--lg" onClick={() => navigate(`uroven/${next.id}`)} autoFocus>
-              {next.title} <span className="opacity-75">({sampleIn(next.sample, prefs.notation)})</span>
-              <Icon name="arrowRight" size={22} />
-            </button>
-          ) : (
-            <button type="button" className="g92-btn g92-btn--lg" onClick={() => navigate(backHref)} autoFocus>
-              Hotovo <Icon name="check" size={22} />
-            </button>
-          )}
+          <button type="button" className="g92-btn g92-btn--ghost g92-btn--lg results__home" onClick={() => navigate('')}>
+            <Icon name="home" size={22} /> Domů
+          </button>
         </div>
       </div>
     );

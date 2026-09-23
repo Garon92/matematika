@@ -23,6 +23,7 @@ const OWN = {
   eyeOff: s('<path d="M4 4l16 16M10.6 6A9.7 9.7 0 0 1 12 5.5c6 0 9.5 6.5 9.5 6.5a17 17 0 0 1-2.6 3.4M6.5 7.3C4 9 2.5 12 2.5 12S6 18.5 12 18.5c1.6 0 3-.4 4.2-1.1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>'),
   info: s('<circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity=".12"/><path d="M12 11v5.5M12 7.8v.01"/>'),
   chevronRight: s('<path d="M9 5l7 7-7 7"/>'),
+  skip: s('<path d="M5 6l7 6-7 6Z" fill="currentColor" fill-opacity=".2"/><path d="M12 6l7 6-7 6Z" fill="currentColor" fill-opacity=".2"/>'),
   shuffle: s('<path d="M4 7h3.5c4.5 0 5 10 9.5 10H20M4 17h3.5c1.4 0 2.4-1 3.2-2.3M20 7h-3c-1.4 0-2.4 1-3.2 2.3"/><path d="M17.5 4.5 20 7l-2.5 2.5M17.5 14.5 20 17l-2.5 2.5"/>'),
 } as const;
 
