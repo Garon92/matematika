@@ -608,7 +608,8 @@
 
 /* ---- play --------------------------------------------------------------- */
 .screen--play {
-  flex: 1;
+  /* a fixed height (not flex-basis) — a % basis in an auto-height column falls back to content height */
+  flex: none;
   width: 100%;
   max-width: 1100px;
   margin-inline: auto;
@@ -677,8 +678,15 @@
 }
 .player__view {
   flex: 1;
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+.count-view {
+  flex: 1 1 auto;
+  min-height: 0;
   width: 100%;
 }
 .player__input {
@@ -902,8 +910,14 @@
 }
 .count-sky {
   width: min(100%, 560px);
-  aspect-ratio: 16 / 10;
-  max-height: 34vh;
+  /* grows into the free space of the task card, shrinks before anything gets pushed out */
+  flex: 1 1 0;
+  min-height: 90px;
+  /* multiple choice: the sky is the whole task, let it be big */
+  max-height: clamp(170px, 40dvh, 400px);
+}
+.count-sky--numpad {
+  max-height: clamp(130px, 28dvh, 320px);
 }
 .hint-sky {
   border-radius: var(--g92-radius-lg);

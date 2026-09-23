@@ -1,5 +1,73 @@
 /* Small / short screens and phones in landscape — loaded after index.css */
 
+/* ---- player (QA round) --------------------------------------------------- */
+.player__toolbar {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px var(--g92-space-2);
+}
+.player__task,
+.player__view {
+  min-height: 0;
+}
+/* last resort: a task taller than its card scrolls inside the card instead of overlapping */
+.player__task {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+/* "safe" centring: overflowing content starts at the top instead of being cut off above it */
+.player__task,
+.player__view,
+.player__main {
+  justify-content: safe center;
+}
+.player__main.has-hint {
+  justify-content: flex-start;
+}
+/* with the hint open, the hint is the picture */
+.player__main.has-hint .word-pic {
+  display: none;
+}
+.player__main.has-hint {
+  justify-content: flex-start;
+}
+.player__main.has-hint > .player__task {
+  flex: 0 1 auto;
+}
+.player__main.has-hint > .hint-panel {
+  flex-shrink: 0;
+}
+.player__choices {
+  display: flex;
+  flex-direction: column;
+  gap: var(--g92-space-3);
+}
+.choice.is-dim {
+  opacity: 0.4;
+}
+.choice.is-correct {
+  animation: slot-pop 0.45s var(--g92-ease-spring);
+}
+/* no "stuck" hover tint on touch screens */
+@media (hover: none) {
+  .numpad__key:hover:not(:disabled) {
+    background: var(--g92-surface);
+  }
+  .numpad__key--back:hover:not(:disabled) {
+    background: var(--g92-surface-2);
+  }
+  .numpad__key--ok:hover:not(:disabled) {
+    background: var(--g92-success);
+  }
+  .choice:hover:not(:disabled) {
+    border-color: var(--g92-border);
+    transform: none;
+  }
+}
+
 /* division with remainder: two answer slots must fit on one line */
 .rem-view {
   display: flex;
@@ -25,7 +93,11 @@
   letter-spacing: 0.02em;
 }
 .hint-panel--combo {
-  height: clamp(150px, 28vh, 250px);
+  height: clamp(130px, 22vh, 250px);
+}
+/* smaller tens bars once a hint shares the space */
+.player__main.has-hint .blocks--big .block-ten {
+  height: 56px;
 }
 .hint-text--compact {
   font-size: var(--g92-fs-lg);
@@ -277,7 +349,10 @@
     font-size: var(--g92-fs-lg);
   }
   .count-sky {
-    max-height: 28dvh;
+    max-height: clamp(150px, 34dvh, 300px);
+  }
+  .count-sky--numpad {
+    max-height: clamp(110px, 24dvh, 220px);
   }
   .choice {
     min-height: 76px;
@@ -287,6 +362,15 @@
   }
   .hint-panel {
     height: clamp(96px, 20dvh, 160px);
+  }
+  .player__main.has-hint .feedback {
+    min-height: 0;
+  }
+  .player__main.has-hint .feedback .mascot {
+    display: none;
+  }
+  .player__main.has-hint .word-pic {
+    display: none;
   }
 }
 
@@ -336,8 +420,24 @@
   .feedback .mascot {
     display: none;
   }
-  .count-sky {
-    max-height: 42dvh;
+  .count-sky,
+  .count-sky--numpad {
+    max-height: none;
+    min-height: 70px;
+  }
+  .blocks--big .block-ten {
+    height: 46px;
+    width: 12px;
+  }
+  .blocks--big .block-unit {
+    width: 12px;
+    height: 12px;
+  }
+  .place-label {
+    font-size: 0.5em;
+  }
+  .count-tip {
+    display: none;
   }
   .choice {
     min-height: 64px;
@@ -345,8 +445,41 @@
   .word-text {
     font-size: 1rem;
   }
-  .hint-panel {
-    height: 38dvh;
+  .word-pic {
+    font-size: 1rem;
+  }
+  .task-question {
+    font-size: var(--g92-fs-md);
+  }
+  /* the hint sits next to the task (never below the fold) */
+  .player__main.has-hint {
+    flex-direction: row;
+    align-items: stretch;
+  }
+  .player__main.has-hint > .player__task,
+  .player__main.has-hint > .hint-panel {
+    flex: 1 1 0;
+    min-width: 0;
+    height: auto;
+    max-height: none;
+  }
+  .player__main.has-hint .expr {
+    font-size: clamp(1.8rem, 11vh, 3rem);
+  }
+  .player__main.has-hint .seq {
+    font-size: clamp(1.3rem, 8vh, 2.2rem);
+  }
+  .player__main.has-hint .word-pic {
+    display: none;
+  }
+  .player__main.has-hint .feedback {
+    display: none;
+  }
+  .rem-view {
+    gap: 2px;
+  }
+  .expr--rem {
+    font-size: clamp(1.6rem, 10vh, 2.6rem);
   }
   .sky-card {
     min-height: calc(100dvh - var(--g92-appbar-total) - 40px);

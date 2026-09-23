@@ -93,9 +93,9 @@ export function TaskView({ task, input, phase, notation, onField }: {
       );
     case 'count':
       return (
-        <div className="flex h-full w-full flex-col items-center gap-3">
+        <div className="count-view flex flex-col items-center gap-3">
           <p className="task-question">Kolik je tu hvězdiček?</p>
-          <div className="night-sky count-sky">
+          <div className={`night-sky count-sky ${task.choices ? '' : 'count-sky--numpad'}`}>
             <StarCanvas
               n={task.n}
               mode={task.frames ? 'ten' : 'scatter'}

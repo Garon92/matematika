@@ -1,6 +1,7 @@
 import type { Task } from './types';
 import { operandValue } from './math';
 import { plural } from './czech';
+import { opSymbol, type Notation } from './notation';
 
 export type Tone = 'a' | 'b' | 'empty' | 'crossed';
 
@@ -73,7 +74,7 @@ function lineFor(start: number, jumps: number[], hideEnd: boolean): Hint {
   return { type: 'line', start, jumps, min, max, hideEnd };
 }
 
-export function hintFor(task: Task): Hint | null {
+export function hintFor(task: Task, notation: Notation = 'school'): Hint | null {
   switch (task.kind) {
     case 'expr': {
       const { op, a, b, c, missing } = task;
@@ -113,7 +114,7 @@ export function hintFor(task: Task): Hint | null {
       if (task.left.kind === 'expr' || task.right.kind === 'expr') {
         const lines: string[] = [];
         const show = (o: typeof task.left, v: number) =>
-          o.kind === 'expr' ? `${o.a} ${o.op === 'add' ? '+' : o.op === 'sub' ? '−' : o.op === 'mul' ? '·' : ':'} ${o.b} = ${v}` : null;
+          o.kind === 'expr' ? `${o.a} ${opSymbol(o.op, notation)} ${o.b} = ${v}` : null;
         const sl = show(task.left, l);
         const sr = show(task.right, r);
         if (sl) lines.push(sl);
@@ -124,7 +125,8 @@ export function hintFor(task: Task): Hint | null {
       return { type: 'blocks', values: [l, r] };
     }
     case 'count':
-      return { type: 'frames', parts: [{ n: task.n, tone: 'a' }] };
+      // scattered stars regrouped into ten-frames; stars that already sit in frames need no hint
+      return task.frames ? null : { type: 'frames', parts: [{ n: task.n, tone: 'a' }] };
     case 'seq': {
       const labels: (number | null)[] = [];
       for (let i = 0; i < task.length; i++) labels.push(i === task.gap ? null : task.start + task.step * i);
@@ -144,10 +146,9 @@ export function hintFor(task: Task): Hint | null {
       };
     case 'word': {
       // the key hint of a word problem is the calculation itself, plus the usual picture for small numbers
-      const sym = task.op === 'add' ? '+' : task.op === 'sub' ? '−' : task.op === 'mul' ? '·' : ':';
-      const lines = [`${task.a} ${sym} ${task.b} = ?`];
+      const lines = [`${task.a} ${opSymbol(task.op, notation)} ${task.b} = ?`];
       const c = task.op === 'add' ? task.a + task.b : task.op === 'sub' ? task.a - task.b : task.op === 'mul' ? task.a * task.b : task.a / task.b;
-      const visual = hintFor({ kind: 'expr', op: task.op, a: task.a, b: task.b, c, missing: 'c' });
+      const visual = hintFor({ kind: 'expr', op: task.op, a: task.a, b: task.b, c, missing: 'c' }, notation);
       if (visual && (visual.type === 'frames' || (visual.type === 'array' && visual.rows * visual.cols <= 60))) return { type: 'combo', lines, hint: visual };
       return { type: 'text', lines };
     }

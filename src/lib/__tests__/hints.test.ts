@@ -35,3 +35,14 @@ describe('hints & speech exist for every level', () => {
     });
   }
 });
+
+describe('hints follow the notation preference', () => {
+  it('uses × and ÷ when asked', () => {
+    const cmp = hintFor({ kind: 'compare', left: { kind: 'num', value: 9 }, right: { kind: 'expr', op: 'div', a: 40, b: 4 } }, 'intl');
+    expect(cmp && cmp.type === 'text' && cmp.lines.join(' ')).toContain('40 ÷ 4 = 10');
+    const word = hintFor({ kind: 'word', op: 'mul', a: 8, b: 3, answer: 24, text: 'x', icon: '🍎', unit: 'jablek', unitForms: ['jablko', 'jablka', 'jablek'] }, 'intl');
+    expect(word && (word.type === 'text' || word.type === 'combo') && word.lines[0]).toBe('8 × 3 = ?');
+    const school = hintFor({ kind: 'word', op: 'div', a: 12, b: 3, answer: 4, text: 'x', icon: '🍎', unit: 'jablek', unitForms: ['jablko', 'jablka', 'jablek'] });
+    expect(school && (school.type === 'text' || school.type === 'combo') && school.lines[0]).toBe('12 : 3 = ?');
+  });
+});

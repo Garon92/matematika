@@ -14,7 +14,7 @@ import { HintView } from './HintView';
 import { TaskView, currentAnswer, type InputState, type Phase } from './TaskView';
 
 const PRAISE = ['Výborně!', 'Správně!', 'Super!', 'Paráda!', 'Jupí!', 'Skvělé!', 'Přesně tak!', 'Bravo!'];
-const RETRY = ['Skoro! Zkus to ještě jednou.', 'Ještě jednou, zvládneš to!', 'To nevadí, zkus to znovu.'];
+const RETRY = ['Ještě jednou, zvládneš to!', 'To nevadí, zkus to znovu.', 'Zkus to ještě jednou.'];
 
 export interface TaskPlayerProps {
   task: Task;
@@ -47,11 +47,12 @@ export function TaskPlayer({ task, notation, prefs, maxWrong, fast = false, tool
   const started = useRef(performance.now());
   const done = useRef(false);
   const taskRef = useRef<HTMLDivElement>(null);
+  const hintRef = useRef<HTMLDivElement>(null);
   const timers = useRef<number[]>([]);
   const ttsOk = useTts();
 
   const mode = inputMode(task);
-  const hint = useMemo(() => (prefs.hints === 'off' ? null : hintFor(task)), [task, prefs.hints]);
+  const hint = useMemo(() => (prefs.hints === 'off' ? null : hintFor(task, notation)), [task, prefs.hints, notation]);
   const maxLen = answerDigits(task);
 
   useEffect(
@@ -108,12 +109,15 @@ export function TaskPlayer({ task, notation, prefs, maxWrong, fast = false, tool
         const e = expected(task);
         const txt = e.kind === 'num' ? String(e.value) : e.kind === 'rem' ? `${e.q}, zbytek ${e.r}` : e.value;
         setMessage(fast ? `Správně je ${txt}.` : `Správně je ${txt}. Nevadí, příště to dáš!`);
-        if (prefs.tts === 'auto' && ttsOk && !fast) speak(`Správně je ${txt}.`);
+        // non-readers must hear the answer too (unless read-aloud is switched off)
+        if (prefs.tts !== 'off' && ttsOk && !fast) speak(`Správně je ${txt}.`);
         if (fast) later(() => complete(true, w), 1100);
         return;
       }
       setPhase('wrong');
-      setMessage(pick(RETRY));
+      const e0 = expected(task);
+      const near = e0.kind === 'num' && ans.kind === 'num' && Math.abs(ans.value - e0.value) <= 1;
+      setMessage(near ? 'Skoro! Zkus to ještě jednou.' : pick(RETRY));
       if (taskRef.current) flash(taskRef.current, 'g92-anim-shake');
       later(() => {
         setPhase('input');
@@ -170,6 +174,11 @@ export function TaskPlayer({ task, notation, prefs, maxWrong, fast = false, tool
     [phase, paused, input, submit],
   );
 
+  // a freshly opened hint must be visible without the child scrolling
+  useEffect(() => {
+    if (hintOpen) hintRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }, [hintOpen]);
+
   const toggleHint = () => {
     if (!hint) return;
     setHintOpen((o) => !o);
@@ -217,11 +226,25 @@ export function TaskPlayer({ task, notation, prefs, maxWrong, fast = false, tool
   const showTts = ttsOk && prefs.tts !== 'off';
   const e = expected(task);
   if (import.meta.env.DEV) (window as unknown as { __mat?: unknown }).__mat = { task, expected: e, phase };
+  const revealed = phase === 'revealed' && !fast;
+
+  const continueBtn = (
+    <button type="button" className="g92-btn g92-btn--xl g92-btn--block continue-btn" onClick={() => complete(true, wrongs)} autoFocus>
+      Pokračovat
+      <Icon name="arrowRight" size={26} />
+    </button>
+  );
+
+  const choiceClass = (value: Rel | number) => {
+    if (phase === 'revealed') return (e.kind === 'num' && e.value === value) || (e.kind === 'rel' && e.value === value) ? 'is-correct' : 'is-dim';
+    if (input.picked !== value) return '';
+    return phase === 'correct' ? 'is-correct' : phase === 'wrong' ? 'is-wrong' : '';
+  };
 
   return (
     <div className="player">
       <div className="player__top">
-        <div className="flex min-w-0 flex-1 items-center gap-2">{toolbar}</div>
+        <div className="player__toolbar">{toolbar}</div>
         {showTts && (
           <button type="button" className="g92-btn g92-btn--soft g92-btn--icon" onClick={() => speak(speechFor(task))} aria-label="Přečíst příklad" title="Přečíst (P)">
             <Icon name="speaker" size={24} />
@@ -241,7 +264,7 @@ export function TaskPlayer({ task, notation, prefs, maxWrong, fast = false, tool
         )}
       </div>
 
-      <div className="player__main">
+      <div className={`player__main ${hint && hintOpen ? 'has-hint' : ''}`}>
         <p className="g92-sr-only" aria-live="polite">
           {speechFor(task)}
         </p>
@@ -256,54 +279,44 @@ export function TaskPlayer({ task, notation, prefs, maxWrong, fast = false, tool
         </div>
 
         {hint && hintOpen && (
-          <div className={`hint-panel hint-panel--${hint.type}`} aria-live="polite">
+          <div className={`hint-panel hint-panel--${hint.type}`} aria-live="polite" ref={hintRef}>
             <HintView hint={hint} />
           </div>
         )}
       </div>
 
       <div className="player__input">
-        {phase === 'revealed' && !fast ? (
-          <button type="button" className="g92-btn g92-btn--xl g92-btn--block continue-btn" onClick={() => complete(true, wrongs)} autoFocus>
-            Pokračovat
-            <Icon name="arrowRight" size={26} />
-          </button>
-        ) : mode === 'compare' ? (
-          <div className="choices choices--rel" role="group" aria-label="Vyber znaménko">
-            {(
-              [
-                ['<', 'je menší'],
-                ['=', 'rovná se'],
-                ['>', 'je větší'],
-              ] as const
-            ).map(([rel, cap]) => (
-              <button
-                key={rel}
-                type="button"
-                className={`choice ${input.picked === rel ? (phase === 'correct' ? 'is-correct' : phase === 'wrong' ? 'is-wrong' : '') : ''}`}
-                onClick={() => choose(rel)}
-                disabled={phase !== 'input'}
-                aria-label={cap}
-              >
-                <span className="choice__big">{rel}</span>
-                <span className="choice__cap">{cap}</span>
-              </button>
-            ))}
+        {mode === 'compare' ? (
+          <div className="player__choices">
+            <div className="choices choices--rel" role="group" aria-label="Vyber znaménko">
+              {(
+                [
+                  ['<', 'je menší'],
+                  ['=', 'rovná se'],
+                  ['>', 'je větší'],
+                ] as const
+              ).map(([rel, cap]) => (
+                <button key={rel} type="button" className={`choice ${choiceClass(rel)}`} onClick={() => choose(rel)} disabled={phase !== 'input'} aria-label={cap}>
+                  <span className="choice__big">{rel}</span>
+                  <span className="choice__cap">{cap}</span>
+                </button>
+              ))}
+            </div>
+            {revealed && continueBtn}
           </div>
         ) : mode === 'choice' && task.kind === 'count' ? (
-          <div className="choices" role="group" aria-label="Vyber číslo">
-            {task.choices!.map((c) => (
-              <button
-                key={c}
-                type="button"
-                className={`choice ${input.picked === c ? (phase === 'correct' ? 'is-correct' : phase === 'wrong' ? 'is-wrong' : '') : ''} ${phase === 'revealed' && e.kind === 'num' && e.value === c ? 'is-correct' : ''}`}
-                onClick={() => choose(c)}
-                disabled={phase !== 'input'}
-              >
-                <span className="choice__big">{c}</span>
-              </button>
-            ))}
+          <div className="player__choices">
+            <div className="choices" role="group" aria-label="Vyber číslo">
+              {task.choices!.map((c) => (
+                <button key={c} type="button" className={`choice ${choiceClass(c)}`} onClick={() => choose(c)} disabled={phase !== 'input'}>
+                  <span className="choice__big">{c}</span>
+                </button>
+              ))}
+            </div>
+            {revealed && continueBtn}
           </div>
+        ) : revealed ? (
+          continueBtn
         ) : (
           <Numpad onKey={press} layout={prefs.numpad} disabled={phase !== 'input' || paused} okReady={currentAnswer(task, input) !== null || (task.kind === 'rem' && input.remQ !== '')} />
         )}
