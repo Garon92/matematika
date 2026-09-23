@@ -1,5 +1,55 @@
 /* Small / short screens and phones in landscape — loaded after index.css */
 
+/* "Výzva dne" card on Home */
+.daily-card {
+  display: flex;
+  align-items: center;
+  gap: var(--g92-space-3);
+  padding: var(--g92-space-3) var(--g92-space-4);
+  margin-top: calc(-1 * var(--g92-space-2));
+  border-radius: var(--g92-radius-xl);
+  border: 2px solid color-mix(in oklab, var(--g92-gold) 55%, transparent);
+  background: linear-gradient(100deg, color-mix(in oklab, var(--g92-gold) 16%, var(--g92-surface)), var(--g92-surface) 70%);
+  box-shadow: var(--g92-shadow-1);
+  color: var(--g92-text);
+  text-decoration: none;
+  transition:
+    transform var(--g92-dur-2) var(--g92-ease-spring),
+    box-shadow var(--g92-dur-2);
+}
+.daily-card:hover {
+  transform: translateY(calc(-2px * var(--g92-motion)));
+  box-shadow: var(--g92-shadow-3);
+}
+.daily-card__icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: color-mix(in oklab, var(--g92-gold) 26%, var(--g92-surface));
+  color: #b77800;
+}
+[data-scheme='dark'] .daily-card__icon {
+  color: var(--g92-gold);
+}
+.daily-card__title {
+  display: block;
+  font-weight: var(--g92-fw-black);
+  font-size: var(--g92-fs-lg);
+  line-height: 1.2;
+}
+.daily-card__desc {
+  display: block;
+  font-size: var(--g92-fs-sm);
+  font-weight: var(--g92-fw-medium);
+  color: var(--g92-text-muted);
+}
+.daily-card.is-done {
+  border-color: color-mix(in oklab, var(--g92-success) 45%, transparent);
+}
+
 /* tap-to-count tip inside the night sky */
 .count-tip {
   margin-top: calc(-1 * var(--g92-space-2));

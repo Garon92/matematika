@@ -10,6 +10,7 @@ import { taskKey, taskOp } from '../lib/math';
 import type { Task } from '../lib/types';
 import type { LayoutMode } from '../stars/layout';
 import type { FreeMode } from '../lib/free';
+import { emptyChallenge, recordChallenge, type ChallengeState } from '../lib/challenge';
 
 export interface Prefs {
   /** "·" and ":" (school) or "×" and "÷" */
@@ -72,6 +73,7 @@ const defaults = {
   sky: { count: 7, step: 1, mode: 'scatter' } as SkyState,
   calc: { a: 3, b: 2, op: 'add', mode: 'scatter', guess: false } as CalcState,
   onboarded: false as boolean,
+  challenge: emptyChallenge() as ChallengeState,
 };
 
 export type AppData = typeof defaults;
@@ -169,6 +171,16 @@ export function reportActivity(note: string | null = null): void {
     metric: { label: 'Hvězd', value: stars },
     ...(note ? { note } : {}),
   });
+}
+
+export function finishChallenge(stars: number): { before: number; after: number } {
+  const day = today();
+  const prev = store.get('challenge');
+  const before = prev.day === day ? prev.stars : 0;
+  store.update('challenge', (c) => recordChallenge({ ...emptyChallenge(), ...c }, day, stars));
+  finishSession();
+  reportActivity('Výzva dne');
+  return { before, after: store.get('challenge').stars };
 }
 
 export function submitTimed(id: string, score: number, stars: number): { isNewBest: boolean; best: number } {

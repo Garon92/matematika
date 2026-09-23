@@ -9,6 +9,7 @@ import { href, navigate } from '../router';
 import { Icon, type IconName } from '../ui/Icon';
 import { Mascot } from '../ui/Mascot';
 import { ProgressRing } from '../ui/ProgressRing';
+import { StarRating } from '../ui/StarRating';
 import { AREA_COLORS, areaStyle } from './areaStyle';
 import { Onboarding } from './Onboarding';
 
@@ -67,6 +68,8 @@ export function Home() {
   const stars = totalStars(progress);
   const name = settings.playerName?.trim() ?? '';
   const goalDone = doneToday >= prefs.dailyGoal;
+  const challenge = useStore('challenge');
+  const challengeStars = challenge.day === t ? challenge.stars : 0;
 
   if (!onboarded) return <Onboarding />;
 
@@ -116,6 +119,19 @@ export function Home() {
           {sampleIn(rec.sample, prefs.notation)}
         </span>
       </button>
+
+      <a href={href('vyzva')} className={`daily-card ${challengeStars > 0 ? 'is-done' : ''}`}>
+        <span className="daily-card__icon" aria-hidden="true">
+          <Icon name="trophy" size={30} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="daily-card__title">Výzva dne</span>
+          <span className="daily-card__desc">
+            {challengeStars > 0 ? (challengeStars === 3 ? 'Splněno na plný počet hvězd!' : 'Splněno! Zkusíš 3 hvězdy?') : '10 příkladů z toho, co už umíš'}
+          </span>
+        </span>
+        <StarRating value={challengeStars} size={22} />
+      </a>
 
       <section aria-labelledby="h-areas">
         <h2 id="h-areas" className="section-title">

@@ -8,7 +8,8 @@ import { starsFor, praise } from '../lib/scoring';
 import { isUnlocked, nextLevel } from '../lib/progress';
 import { solvedText, formatDuration } from '../lib/format';
 import type { Task } from '../lib/types';
-import { finishLevel, finishSession, recordTask, store, today, usePrefs, type AnswerRecord } from '../state/store';
+import { finishChallenge, finishLevel, finishSession, recordTask, store, today, usePrefs, type AnswerRecord } from '../state/store';
+import { challengeTasks } from '../lib/challenge';
 import { TaskPlayer } from '../task/TaskPlayer';
 import { navigate } from '../router';
 import { Icon } from '../ui/Icon';
@@ -16,7 +17,7 @@ import { Mascot } from '../ui/Mascot';
 import { StarRating } from '../ui/StarRating';
 import { NotFound } from './NotFound';
 
-export type SessionSource = { kind: 'level'; levelId: string } | { kind: 'mistakes' };
+export type SessionSource = { kind: 'level'; levelId: string } | { kind: 'mistakes' } | { kind: 'daily' };
 
 function Progress({ total, records, index }: { total: number; records: AnswerRecord[]; index: number }) {
   return (
@@ -39,6 +40,7 @@ export function Session({ source }: { source: SessionSource }) {
     const deck = store.get('deck');
     const due = dueCards(deck, today());
     if (source.kind === 'mistakes') return due.slice(0, Math.max(5, prefs.sessionLength)).map((c) => c.task);
+    if (source.kind === 'daily') return challengeTasks(store.get('progress'), today(), 10, prefs.unlockAll);
     if (!level) return [];
     const inject = due.filter((c) => c.level === level.id).map((c) => c.task);
     return buildTasks(level.gen, prefs.sessionLength, rng, inject);
@@ -72,6 +74,9 @@ export function Session({ source }: { source: SessionSource }) {
       const ms = performance.now() - started;
       if (source.kind === 'level') {
         const { before, after } = finishLevel(source.levelId, stars, firstTry);
+        setResult({ stars, firstTry, ms, before, after });
+      } else if (source.kind === 'daily') {
+        const { before, after } = finishChallenge(stars);
         setResult({ stars, firstTry, ms, before, after });
       } else {
         finishSession();
@@ -138,7 +143,8 @@ export function Session({ source }: { source: SessionSource }) {
         <div className="results__hero">
           <Mascot mood={result.stars >= 2 ? 'cheer' : result.stars === 1 ? 'happy' : 'think'} size={112} />
           <h1 className="results__title">{source.kind === 'mistakes' ? (result.stars >= 2 ? 'Chyby jsou pryč!' : 'Dobrá práce!') : praise(result.stars)}</h1>
-          {source.kind === 'level' && <StarRating value={result.stars} size={52} animate />}
+          {source.kind !== 'mistakes' && <StarRating value={result.stars} size={52} animate />}
+          {source.kind === 'daily' && <p className="g92-badge">🏆 Výzva dne {result.stars >= 1 ? 'splněna' : '– zkus to znovu'}</p>}
           <p className="results__stats">
             <b>{result.firstTry}</b> z {records.length} napoprvé · {formatDuration(result.ms)}
           </p>
@@ -200,7 +206,7 @@ export function Session({ source }: { source: SessionSource }) {
               <Icon name="close" size={24} />
             </button>
             <div className="min-w-0 flex-1">
-              <p className="session-title">{level ? level.title : 'Chyby k procvičení'}</p>
+              <p className="session-title">{level ? level.title : source.kind === 'daily' ? 'Výzva dne' : 'Chyby k procvičení'}</p>
               <Progress total={tasks.length} records={records} index={index} />
             </div>
           </>

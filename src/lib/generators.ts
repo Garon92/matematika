@@ -263,7 +263,7 @@ export function countStars(min: number, max: number, opts: { choices: boolean; f
       while (set.size < 3 && guard++ < 100) {
         const d = randInt(rng, -2, 2);
         const v = n + d;
-        if (v >= Math.max(0, min - 1) && v <= max + 1) set.add(v);
+        if (v >= Math.max(1, min - 1) && v <= max + 1) set.add(v);
       }
       t.choices = [...set].sort((x, y) => x - y);
     }

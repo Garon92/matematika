@@ -31,6 +31,8 @@ function Screen({ route }: { route: string[] }) {
       return <Session key={b} source={{ kind: 'level', levelId: b ?? '' }} />;
     case 'chyby':
       return b === 'hrat' ? <Session key="mistakes" source={{ kind: 'mistakes' }} /> : <Mistakes />;
+    case 'vyzva':
+      return <Session key="daily" source={{ kind: 'daily' }} />;
     case 'zavod':
       return <Timed key={b ?? 'menu'} id={b ?? null} />;
     case 'trenink':
@@ -48,6 +50,7 @@ function Screen({ route }: { route: string[] }) {
 
 const TITLES: Record<string, string> = {
   chyby: 'Chyby k procvičení',
+  vyzva: 'Výzva dne',
   zavod: 'Závod s časem',
   trenink: 'Volný trénink',
   nebe: 'Hvězdné nebe',
