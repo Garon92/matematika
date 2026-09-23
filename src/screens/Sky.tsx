@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { StarCanvas, MAX_STARS } from '../stars/StarCanvas';
+import { StarCanvas, MAX_STARS, GL_THRESHOLD } from '../stars/StarCanvas';
 import { effectiveMode, type LayoutMode } from '../stars/layout';
 import { formatNumber, numberToWords, placeValue, starsWord } from '../lib/czech';
 import { randomSeed } from '../lib/rng';
@@ -106,7 +106,7 @@ export function Sky() {
           mode={mode}
           seed={seed}
           twinkle
-          className="sky-card__stars"
+          className={`sky-card__stars ${count > GL_THRESHOLD ? 'is-full' : ''}`}
           label={`${count} ${starsWord(count)}`}
           countable={count <= 200}
           onCount={countFeedback}
@@ -139,14 +139,20 @@ export function Sky() {
             <input
               className="g92-input g92-input--xl text-center tabular-nums"
               inputMode="numeric"
-              value={draft ?? String(count)}
+              value={draft ?? formatNumber(count)}
               onChange={(e) => {
                 const v = e.target.value.replace(/\D/g, '').slice(0, 8);
                 setDraft(v);
                 if (v !== '') setCount(clampStars(Number(v)));
               }}
               onBlur={() => setDraft(null)}
-              onFocus={(e) => e.target.select()}
+              onFocus={(e) => {
+                const input = e.target;
+                setDraft(String(count));
+                requestAnimationFrame(() => {
+                  if (document.activeElement === input) input.select();
+                });
+              }}
               aria-label="Počet hvězd"
             />
           </label>
