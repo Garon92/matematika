@@ -460,6 +460,7 @@
   font-size: var(--g92-fs-3xl);
   font-weight: var(--g92-fw-black);
   line-height: 1.1;
+  text-wrap: balance;
 }
 .start-grid {
   display: grid;

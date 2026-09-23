@@ -7,7 +7,7 @@ import { dayStat, totals } from '../lib/stats';
 import { dayKeyOf, weekdayShort } from '../lib/dates';
 import { formatDuration, solvedText } from '../lib/format';
 import { plural } from '../lib/czech';
-import { daily, exportData, importData, resetAll, today, usePrefs, useStore } from '../state/store';
+import { daily, exportData, importData, resetAll, store, today, usePrefs, useStore } from '../state/store';
 import { navigate } from '../router';
 import { Icon } from '../ui/Icon';
 import { StarRating } from '../ui/StarRating';
@@ -345,6 +345,16 @@ function Overview() {
               toast(ok ? 'Postup obnoven.' : 'Tohle není záloha Matematiky.', { variant: ok ? 'success' : 'danger' });
             }}
           />
+          <button
+            type="button"
+            className="g92-btn g92-btn--secondary"
+            onClick={() => {
+              store.set('onboarded', false);
+              navigate('');
+            }}
+          >
+            <Icon name="restart" size={20} /> Znovu úvod („Co už umíš?“)
+          </button>
           <button
             type="button"
             className="g92-btn g92-btn--danger"

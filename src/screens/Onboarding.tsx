@@ -2,13 +2,16 @@ import { useState } from 'react';
 import { setSettings, sfx } from '../kit';
 import { START_POINTS, unlockUpTo } from '../lib/progress';
 import { sampleIn } from '../lib/levels';
-import { store, usePrefs, useSettings } from '../state/store';
+import { setPrefs, store, usePrefs, useSettings } from '../state/store';
+import { speak, useTts } from '../state/tts';
 import { Mascot } from '../ui/Mascot';
 import { Icon } from '../ui/Icon';
+import { SwitchRow } from '../ui/Segmented';
 
 export function Onboarding() {
   const settings = useSettings();
   const prefs = usePrefs();
+  const tts = useTts();
   const [step, setStep] = useState(0);
   const [name, setName] = useState(settings.playerName ?? '');
 
@@ -39,6 +42,18 @@ export function Onboarding() {
               <span className="g92-label">Jak se jmenuješ? (nemusíš vyplňovat)</span>
               <input className="g92-input g92-input--xl text-center" value={name} onChange={(e) => setName(e.target.value)} maxLength={24} autoComplete="off" placeholder="Jméno" />
             </label>
+            {tts && (
+              <SwitchRow
+                id="onb-tts"
+                label="🔊 Číst příklady nahlas"
+                hint="Pro děti, které ještě nečtou. Dá se změnit v nastavení."
+                checked={prefs.tts === 'auto'}
+                onChange={(v) => {
+                  setPrefs({ tts: v ? 'auto' : 'button' });
+                  if (v) speak('Ahoj! Budu ti číst příklady.');
+                }}
+              />
+            )}
             <button type="submit" className="g92-btn g92-btn--xl g92-btn--block">
               Dál <Icon name="arrowRight" size={26} />
             </button>
