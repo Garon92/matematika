@@ -1,0 +1,162 @@
+/* Small / short screens and phones in landscape — loaded after index.css */
+
+/* short portrait phones (e.g. 360 × 640): everything must fit above the fold */
+@media (max-height: 740px) and (orientation: portrait) {
+  .screen--play {
+    padding-top: var(--g92-space-2);
+  }
+  .player {
+    gap: var(--g92-space-2);
+  }
+  .player__task {
+    min-height: 110px;
+    padding: var(--g92-space-3) var(--g92-space-2) var(--g92-space-2);
+    border-radius: var(--g92-radius-xl);
+  }
+  .numpad {
+    gap: 6px;
+  }
+  .numpad__key {
+    height: clamp(44px, 7.6dvh, 58px);
+    font-size: 1.6rem;
+  }
+  .expr {
+    font-size: clamp(2.4rem, 1.2rem + 7vw, 3.6rem);
+  }
+  .expr--long {
+    font-size: clamp(2rem, 1rem + 6vw, 3rem);
+  }
+  .word-text {
+    font-size: 1.1rem;
+    line-height: 1.35;
+  }
+  .word-pic {
+    font-size: 1.15rem;
+  }
+  .feedback {
+    min-height: 34px;
+  }
+  .feedback .mascot {
+    width: 34px;
+    height: 34px;
+  }
+  .feedback__text {
+    font-size: var(--g92-fs-lg);
+  }
+  .count-sky {
+    max-height: 28dvh;
+  }
+  .choice {
+    min-height: 76px;
+  }
+  .continue-btn {
+    min-height: 60px;
+  }
+  .hint-panel {
+    height: clamp(96px, 20dvh, 160px);
+  }
+}
+
+/* phones in landscape: task on the left, numpad on the right */
+@media (orientation: landscape) and (max-height: 560px) {
+  .screen--play {
+    padding: var(--g92-space-2) max(var(--g92-space-3), env(safe-area-inset-right)) var(--g92-space-2) max(var(--g92-space-3), env(safe-area-inset-left));
+  }
+  .player {
+    grid-template-columns: minmax(0, 1fr) minmax(250px, 40%);
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas:
+      'top top'
+      'main input';
+    gap: var(--g92-space-2) var(--g92-space-4);
+  }
+  .player__top .g92-btn--icon {
+    min-height: 40px;
+    min-width: 44px;
+  }
+  .player__input {
+    align-self: center;
+  }
+  .player__task {
+    min-height: 0;
+    padding: var(--g92-space-2);
+    border-radius: var(--g92-radius-lg);
+  }
+  .numpad {
+    gap: 6px;
+  }
+  .numpad__key {
+    height: calc((100dvh - var(--g92-appbar-total) - 96px) / 4);
+    min-height: 40px;
+    max-height: 64px;
+    font-size: 1.5rem;
+  }
+  .expr {
+    font-size: clamp(2.4rem, 17vh, 4.6rem);
+  }
+  .expr--long {
+    font-size: clamp(2rem, 13vh, 3.6rem);
+  }
+  .feedback {
+    min-height: 30px;
+  }
+  .feedback .mascot {
+    display: none;
+  }
+  .count-sky {
+    max-height: 42dvh;
+  }
+  .choice {
+    min-height: 64px;
+  }
+  .word-text {
+    font-size: 1rem;
+  }
+  .hint-panel {
+    height: 38dvh;
+  }
+  .sky-card {
+    min-height: calc(100dvh - var(--g92-appbar-total) - 40px);
+  }
+  .sky-screen .screen-header__sub {
+    display: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .free-score {
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+  .free-score__label,
+  .free-skip__text {
+    display: none;
+  }
+  .free-skip {
+    padding-inline: 8px;
+    min-width: 44px;
+  }
+  .free-panel {
+    position: fixed;
+    top: calc(var(--g92-appbar-total) + 64px);
+    left: 16px;
+    right: 16px;
+    width: auto;
+  }
+  .free-settings__toggle {
+    padding-inline: 10px;
+  }
+}
+
+/* very narrow phones */
+@media (max-width: 374px) {
+  .numpad__key {
+    font-size: 1.5rem;
+  }
+  .choices {
+    gap: var(--g92-space-2);
+  }
+  .choice__big {
+    font-size: 2.2rem;
+  }
+}

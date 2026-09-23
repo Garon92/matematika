@@ -1,5 +1,6 @@
 import './kit/kit.css';
 import './index.css';
+import './responsive.css';
 import './kit';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
