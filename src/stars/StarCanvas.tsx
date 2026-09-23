@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { computeLayout, effectiveMode, type LayoutMode } from './layout';
-import { draw2D, glRadius, GLStars, TONES, type Segment } from './render';
+import { draw2D, glRadius, GLStars, hitStar, TONES, type Segment } from './render';
 import { prefersReducedMotion } from '../kit';
 
 /** Above this count (in scatter mode) stars are drawn by WebGL2. */
@@ -22,6 +22,10 @@ export interface StarCanvasProps {
   padding?: number;
   className?: string;
   label?: string;
+  /** Tap-to-count: tapping a star marks it with the next number. */
+  countable?: boolean;
+  /** Called with the running count after each tap (0 after un-marking all). */
+  onCount?: (count: number) => void;
 }
 
 function useSize(ref: React.RefObject<HTMLElement | null>) {
@@ -80,7 +84,10 @@ export function StarCanvas({
   padding,
   className,
   label,
+  countable = false,
+  onCount,
 }: StarCanvasProps) {
+  const [marks, setMarks] = useState<number[]>([]);
   const wrap = useRef<HTMLDivElement>(null);
   const c2d = useRef<HTMLCanvasElement>(null);
   const cgl = useRef<HTMLCanvasElement>(null);
@@ -99,6 +106,19 @@ export function StarCanvas({
     if (useGL || w < 2 || h < 2) return null;
     return computeLayout({ n: count, mode: eff, width: w, height: h, seed, rows, cols, maxR, padding });
   }, [useGL, count, eff, w, h, seed, rows, cols, maxR, padding]);
+
+  // a new layout invalidates the tapped stars
+  useEffect(() => setMarks([]), [count, eff, seed, w, h, rows, cols]);
+
+  const onTap = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!countable || !layout) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const i = hitStar(layout, e.clientX - rect.left, e.clientY - rect.top);
+    if (i < 0) return;
+    const next = marks.includes(i) ? marks.filter((x) => x !== i) : [...marks, i];
+    setMarks(next);
+    onCount?.(next.length);
+  };
 
   // pop-in births for newly added stars
   if (prev.current.n !== count || prev.current.mode !== mode) {
@@ -164,6 +184,7 @@ export function StarCanvas({
         twinkle: twinkle && allowMotion,
         seed,
         guides,
+        marks,
       });
       if (animating && !document.hidden) raf.current = requestAnimationFrame(frame);
     };
@@ -179,7 +200,7 @@ export function StarCanvas({
       cancelAnimationFrame(raf.current);
       document.removeEventListener('visibilitychange', onVis);
     };
-  }, [layout, useGL, count, segs, w, h, seed, twinkle, guides]);
+  }, [layout, useGL, count, segs, w, h, seed, twinkle, guides, marks]);
 
   useEffect(
     () => () => {
@@ -190,7 +211,7 @@ export function StarCanvas({
   );
 
   return (
-    <div ref={wrap} className={`relative ${className ?? ''}`} role="img" aria-label={label ?? `${count} hvězd`}>
+    <div ref={wrap} className={`relative ${countable ? 'cursor-pointer' : ''} ${className ?? ''}`} role="img" aria-label={label ?? `${count} hvězd`} onClick={onTap}>
       <canvas ref={c2d} className="absolute inset-0 h-full w-full" aria-hidden="true" />
       <canvas ref={cgl} className="absolute inset-0 h-full w-full" style={{ display: 'none' }} aria-hidden="true" />
     </div>

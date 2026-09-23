@@ -4,6 +4,7 @@ import { expected } from '../lib/math';
 import { plural } from '../lib/czech';
 import { StarCanvas } from '../stars/StarCanvas';
 import { Blocks } from './HintView';
+import { countFeedback } from '../ui/countSound';
 
 export type Phase = 'input' | 'correct' | 'wrong' | 'revealed';
 
@@ -86,8 +87,22 @@ export function TaskView({ task, input, phase, notation, onField }: {
         <div className="flex h-full w-full flex-col items-center gap-3">
           <p className="task-question">Kolik je tu hvězdiček?</p>
           <div className="night-sky count-sky">
-            <StarCanvas n={task.n} mode={task.frames ? 'ten' : 'scatter'} seed={task.seed} maxR={task.n <= 5 ? 30 : 24} className="h-full w-full" label="Hvězdičky k spočítání" />
+            <StarCanvas
+              n={task.n}
+              mode={task.frames ? 'ten' : 'scatter'}
+              seed={task.seed}
+              maxR={task.n <= 5 ? 30 : 24}
+              className="h-full w-full"
+              label="Hvězdičky k spočítání"
+              countable={phase === 'input'}
+              onCount={countFeedback}
+            />
           </div>
+          {phase === 'input' && (
+            <span className="count-tip" aria-hidden="true">
+              👆 Ťukej na hvězdičky a počítej
+            </span>
+          )}
           {!task.choices && (
             <div className="expr expr--small">
               <Slot text={s.value} phase={phase} active label="Tvoje odpověď" />

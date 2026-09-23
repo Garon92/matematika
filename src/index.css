@@ -1209,7 +1209,8 @@
 }
 .sky-card__stars {
   position: absolute !important;
-  inset: 0;
+  /* keep stars out from under the number (top) and the place-value chips (bottom) */
+  inset: clamp(64px, 12vh, 104px) 0 40px 0;
 }
 .sky-card__head {
   position: absolute;

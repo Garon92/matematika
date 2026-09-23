@@ -31,18 +31,38 @@ export function useStarGestures(ref: React.RefObject<HTMLElement | null>, onStep
       const [a, b] = [...pointers.values()];
       return a && b ? Math.hypot(a.x - b.x, a.y - b.y) : 0;
     };
+    // a tap stays a click (tap-to-count); only a real drag captures the pointer and swallows the click
+    let startX = 0;
+    let startY = 0;
+    let dragging = false;
+    let swallowClick = false;
     const onDown = (e: PointerEvent) => {
       if (e.pointerType === 'mouse' && e.button !== 0) return;
-      el.setPointerCapture(e.pointerId);
       pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
       if (pointers.size === 1) {
         lastY = e.clientY;
+        startX = e.clientX;
+        startY = e.clientY;
         dragAcc = 0;
-      } else if (pointers.size === 2) pinchDist = dist();
+        dragging = false;
+      } else if (pointers.size === 2) {
+        pinchDist = dist();
+        dragging = true;
+      }
     };
     const onMove = (e: PointerEvent) => {
       if (!pointers.has(e.pointerId)) return;
       pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (!dragging && Math.hypot(e.clientX - startX, e.clientY - startY) > 8) {
+        dragging = true;
+        swallowClick = true;
+        try {
+          el.setPointerCapture(e.pointerId);
+        } catch {
+          /* ignore */
+        }
+      }
+      if (!dragging) return;
       if (pointers.size === 1) {
         dragAcc += lastY - e.clientY;
         lastY = e.clientY;
@@ -69,12 +89,21 @@ export function useStarGestures(ref: React.RefObject<HTMLElement | null>, onStep
         dragAcc = 0;
       }
     };
+    const onClickCapture = (e: MouseEvent) => {
+      if (swallowClick) {
+        swallowClick = false;
+        e.stopPropagation();
+        e.preventDefault();
+      }
+    };
     el.addEventListener('wheel', onWheel, { passive: false });
     el.addEventListener('pointerdown', onDown);
     el.addEventListener('pointermove', onMove);
     el.addEventListener('pointerup', onUp);
     el.addEventListener('pointercancel', onUp);
+    el.addEventListener('click', onClickCapture, true);
     return () => {
+      el.removeEventListener('click', onClickCapture, true);
       el.removeEventListener('wheel', onWheel);
       el.removeEventListener('pointerdown', onDown);
       el.removeEventListener('pointermove', onMove);

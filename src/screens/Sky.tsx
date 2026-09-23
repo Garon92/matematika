@@ -10,6 +10,7 @@ import { Icon } from '../ui/Icon';
 import { Segmented } from '../ui/Segmented';
 import { useHoldRepeat, useStarGestures } from '../ui/useStarGestures';
 import { ScreenHeader } from './ScreenHeader';
+import { countFeedback } from '../ui/countSound';
 
 export const LAYOUTS: readonly { value: LayoutMode; label: string; title: string }[] = [
   { value: 'scatter', label: 'Rozházené', title: 'Hvězdy náhodně po obloze' },
@@ -100,7 +101,16 @@ export function Sky() {
             </button>
           </div>
         </div>
-        <StarCanvas n={count} mode={mode} seed={seed} twinkle className="sky-card__stars" label={`${count} ${starsWord(count)}`} />
+        <StarCanvas
+          n={count}
+          mode={mode}
+          seed={seed}
+          twinkle
+          className="sky-card__stars"
+          label={`${count} ${starsWord(count)}`}
+          countable={count <= 200}
+          onCount={countFeedback}
+        />
         {pv && !hidden && count >= 10 && (
           <div className="sky-card__pv" aria-hidden="true">
             {pv.map((p) => (

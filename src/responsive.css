@@ -1,5 +1,19 @@
 /* Small / short screens and phones in landscape — loaded after index.css */
 
+/* tap-to-count tip inside the night sky */
+.count-tip {
+  margin-top: calc(-1 * var(--g92-space-2));
+  color: var(--g92-text-muted);
+  font-size: var(--g92-fs-sm);
+  font-weight: var(--g92-fw-bold);
+  white-space: nowrap;
+}
+@media (max-height: 740px) {
+  .count-tip {
+    display: none;
+  }
+}
+
 /* word problem pictures: groups for multiplication, a pile for division */
 .word-pic__box {
   padding: 2px 6px;

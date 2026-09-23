@@ -125,9 +125,58 @@ export interface Draw2DOptions {
   seed: number;
   /** show outlines of groups / empty ten-frame slots */
   guides: boolean;
+  /** star indices tapped by the child, in counting order (tap-to-count aid) */
+  marks?: readonly number[];
 }
 
 const POP_MS = 420;
+
+/** Rings + running numbers on tapped stars. */
+function drawMarks(ctx: CanvasRenderingContext2D, layout: Layout, marks: readonly number[]): void {
+  const r = layout.r;
+  const fs = Math.max(11, Math.min(22, r * 0.85));
+  ctx.save();
+  ctx.lineWidth = Math.max(2, r * 0.12);
+  ctx.font = `800 ${fs}px Nunito, system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  marks.forEach((i, k) => {
+    const x = layout.xs[i];
+    const y = layout.ys[i];
+    if (x === undefined || y === undefined) return;
+    ctx.beginPath();
+    ctx.arc(x, y, r * 1.18, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+    ctx.stroke();
+    const label = String(k + 1);
+    const bw = Math.max(fs * 1.25, ctx.measureText(label).width + fs * 0.6);
+    const bx = x + r * 0.95;
+    const by = y - r * 0.95;
+    ctx.beginPath();
+    ctx.roundRect(bx - bw / 2, by - fs * 0.62, bw, fs * 1.24, fs * 0.62);
+    ctx.fillStyle = '#7c5cff';
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.fillText(label, bx, by + 1);
+  });
+  ctx.restore();
+}
+
+/** Index of the star under (x, y) or -1. */
+export function hitStar(layout: Layout, x: number, y: number): number {
+  let best = -1;
+  let bestD = Math.max(layout.r * 1.7, 16) ** 2;
+  for (let i = 0; i < layout.n; i++) {
+    const dx = layout.xs[i]! - x;
+    const dy = layout.ys[i]! - y;
+    const d = dx * dx + dy * dy;
+    if (d < bestD) {
+      bestD = d;
+      best = i;
+    }
+  }
+  return best;
+}
 
 function easeOutBack(t: number): number {
   const c1 = 1.9;
@@ -235,6 +284,7 @@ export function draw2D(ctx: CanvasRenderingContext2D, o: Draw2DOptions): boolean
       }
     }
   }
+  if (o.marks && o.marks.length > 0 && layout.r >= 3) drawMarks(ctx, layout, o.marks);
   return animating;
 }
 
