@@ -172,10 +172,21 @@ export function Session({ source }: { source: SessionSource }) {
         )}
 
         <div className="results__actions">
-          <button type="button" className="g92-btn g92-btn--secondary g92-btn--lg" onClick={() => setRound((r) => r + 1)}>
-            <Icon name="restart" size={22} /> Znovu
-          </button>
-          {next && nextOpen && result.stars >= 1 ? (
+          {result.stars === 0 && source.kind !== 'mistakes' ? (
+            <>
+              <button type="button" className="g92-btn g92-btn--secondary g92-btn--lg" onClick={() => navigate(backHref)}>
+                Zpět
+              </button>
+              <button type="button" className="g92-btn g92-btn--lg" onClick={() => setRound((r) => r + 1)} autoFocus>
+                <Icon name="restart" size={22} /> Zkusit znovu
+              </button>
+            </>
+          ) : (
+            <button type="button" className="g92-btn g92-btn--secondary g92-btn--lg" onClick={() => setRound((r) => r + 1)}>
+              <Icon name="restart" size={22} /> Znovu
+            </button>
+          )}
+          {result.stars === 0 && source.kind !== 'mistakes' ? null : next && nextOpen && result.stars >= 1 ? (
             <button type="button" className="g92-btn g92-btn--lg" onClick={() => navigate(`uroven/${next.id}`)} autoFocus>
               {next.title} <span className="opacity-75">({sampleIn(next.sample, prefs.notation)})</span>
               <Icon name="arrowRight" size={22} />

@@ -97,9 +97,12 @@ function TimedRun({ id }: { id: string }) {
     let raf = 0;
     const tick = () => {
       const now = performance.now();
+      const prevSec = Math.ceil(leftRef.current / 1000);
       leftRef.current = Math.max(0, leftRef.current - (now - last.current));
       last.current = now;
       setLeft(leftRef.current);
+      const sec = Math.ceil(leftRef.current / 1000);
+      if (sec !== prevSec && sec <= 5 && sec > 0) sfx.countdown(); // last five seconds tick
       if (leftRef.current <= 0) {
         finish();
         return;
