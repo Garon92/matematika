@@ -111,7 +111,13 @@ function unitForms(item: Pick<Item, 'nom1' | 'few' | 'many'>): [string, string, 
 
 /** Czech typography: no one-letter preposition at a line end, numbers stick to their noun. */
 export function nbsp(text: string): string {
-  return text.replace(/(?<=^|\s)([vVkKsSzZoOuUaAiI])\s/g, '$1\u00A0').replace(/(\d+) /g, '$1\u00A0');
+  // No regex lookbehind (Safari < 16.4 can't parse it) – repeat until stable so chains like "a k v lese" all stick.
+  let out = text;
+  for (let prev = ''; prev !== out; ) {
+    prev = out;
+    out = out.replace(/(^|\s)([vVkKsSzZoOuUaAiI])[^\S\u00A0]/g, '$1$2\u00A0');
+  }
+  return out.replace(/(\d+) /g, '$1\u00A0');
 }
 
 function task(op: Op, a: number, b: number, answer: number, text: string, icon: string, forms: [string, string, string]): WordTask {

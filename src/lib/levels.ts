@@ -45,9 +45,9 @@ const L = (area: AreaId, id: string, title: string, sample: string, desc: string
 
 export const LEVELS: readonly LevelDef[] = [
   // ------------------------------------------------------------ counting
-  L('count', 'count-5', 'Spočítej do 5', '⭐ 5', 'Kolik je hvězdiček? (1–5, výběr ze tří)', g.countStars(1, 5, { choices: true, frames: false })),
-  L('count', 'count-10', 'Spočítej do 10', '⭐ 10', 'Kolik je hvězdiček? (3–10, výběr ze tří)', g.countStars(3, 10, { choices: true, frames: false })),
-  L('count', 'count-20', 'Spočítej do 20', '⭐ 20', 'Hvězdy v desítkových rámečcích (8–20)', g.countStars(8, 20, { choices: false, frames: true })),
+  L('count', 'count-5', 'Spočítej do 5', '1 2 3 4 5', 'Kolik je hvězdiček? (1–5, výběr ze tří)', g.countStars(1, 5, { choices: true, frames: false })),
+  L('count', 'count-10', 'Spočítej do 10', '1 … 10', 'Kolik je hvězdiček? (3–10, výběr ze tří)', g.countStars(3, 10, { choices: true, frames: false })),
+  L('count', 'count-20', 'Spočítej do 20', '1 … 20', 'Hvězdy v desítkových rámečcích (8–20)', g.countStars(8, 20, { choices: false, frames: true })),
   L('count', 'cmp-10', 'Porovnej do 10', '3 < 7', 'Větší, menší, nebo stejné? (0–10)', g.compareNumbers(10)),
   L('count', 'seq-20', 'Číselná řada', '4, 5, ?', 'Které číslo chybí? (do 20, i pozpátku)', g.sequence(20, [1])),
   L('count', 'cmp-20', 'Porovnej do 20', '12 > 9', 'Porovnávání čísel do 20', g.compareNumbers(20)),

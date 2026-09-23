@@ -177,6 +177,18 @@
 .stat-chip--goal {
   padding-left: 6px;
 }
+.stat-chip__txt {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.home-foot {
+  display: flex;
+  justify-content: center;
+}
+.home-foot__parents {
+  flex-wrap: wrap;
+}
 
 .play-cta {
   display: flex;
@@ -258,10 +270,11 @@
 
 .area-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr));
+  /* 6 areas → always full rows: 2 × 3 on phones/tablets, 3 × 2 from 760 px */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--g92-space-3);
 }
-@media (max-width: 559px) {
+@media (max-width: 759px) {
   .area-grid {
     grid-template-columns: 1fr 1fr;
   }
@@ -359,8 +372,31 @@
 
 .mode-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  grid-template-columns: 1fr;
   gap: var(--g92-space-3);
+}
+/* 5 tiles → no half-empty rows: 2 + 2 + 1 (full) on tablets, 2 sky tiles + 3 others on wide screens */
+@media (min-width: 600px) {
+  .mode-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .mode-grid > :last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
+@media (min-width: 1000px) {
+  .mode-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+  .mode-grid > * {
+    grid-column: span 2;
+  }
+  .mode-grid > :nth-child(-n + 2) {
+    grid-column: span 3;
+  }
+  .mode-grid > :last-child:nth-child(odd) {
+    grid-column: span 2;
+  }
 }
 .mode-tile {
   position: relative;
@@ -1194,7 +1230,26 @@
     justify-content: center;
     padding-inline: 8px;
   }
-  .stat-chip span:last-child {
+  .stat-chip {
+    gap: 5px;
+    min-height: 56px;
+  }
+  .stat-chip__txt {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+    line-height: 1.1;
+  }
+  .stat-chip__txt span {
+    font-size: 11px;
+    font-weight: var(--g92-fw-bold);
+    white-space: nowrap;
+  }
+  .stat-chip {
+    padding-inline: 6px;
+    gap: 4px;
+  }
+  .home-foot__sub {
     display: none;
   }
   .play-cta__icon {
@@ -1887,6 +1942,21 @@
   background: rgb(255 255 255 / 0.3);
   transform: scaleX(var(--p, 0));
   transform-origin: left center;
+}
+.parent-gate__hint {
+  min-height: 1.5em;
+  margin: 0;
+  font-size: var(--g92-fs-sm);
+  color: var(--g92-text-muted);
+}
+.parent-gate__hint.is-warn {
+  color: var(--g92-warning);
+  font-weight: 700;
+}
+@media not (any-pointer: fine) {
+  .parent-gate__keys {
+    display: none;
+  }
 }
 .kpi-grid {
   display: grid;

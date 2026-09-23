@@ -88,22 +88,28 @@ export function Home() {
         <div className="hero__stats">
           <div className="stat-chip" title="Dny v řadě">
             <Icon name="flame" size={22} className={streak > 0 ? 'text-warning' : 'text-subtle'} />
-            <b>{streak}</b>
-            <span>{plural(streak, 'den', 'dny', 'dní')}</span>
+            <span className="stat-chip__txt">
+              <b>{streak}</b>
+              <span>{plural(streak, 'den', 'dny', 'dní')} v řadě</span>
+            </span>
           </div>
           <div className="stat-chip" title="Hvězdy">
             <Icon name="star" size={22} className="text-gold" />
-            <b>{stars}</b>
-            <span>{plural(stars, 'hvězda', 'hvězdy', 'hvězd')}</span>
+            <span className="stat-chip__txt">
+              <b>{stars}</b>
+              <span>{plural(stars, 'hvězda', 'hvězdy', 'hvězd')}</span>
+            </span>
           </div>
           <div className="stat-chip stat-chip--goal" title={`Dnešní cíl: ${prefs.dailyGoal} příkladů`}>
             <ProgressRing value={doneToday / prefs.dailyGoal} size={40} stroke={5} color={goalDone ? 'var(--g92-success)' : 'var(--accent)'}>
               {goalDone ? <Icon name="check" size={18} className="text-success" /> : <Icon name="target" size={18} className="text-accent-text" />}
             </ProgressRing>
-            <b>
-              {Math.min(doneToday, prefs.dailyGoal)}/{prefs.dailyGoal}
-            </b>
-            <span>dnes</span>
+            <span className="stat-chip__txt">
+              <b>
+                {Math.min(doneToday, prefs.dailyGoal)}/{prefs.dailyGoal}
+              </b>
+              <span>dnes</span>
+            </span>
           </div>
         </div>
       </section>
@@ -158,9 +164,14 @@ export function Home() {
           <ModeTile to="zavod" icon="clock" title="Závod s časem" desc="Kolik stihneš za minutu?" />
           <ModeTile to="chyby" icon="repeat" title="Chyby k procvičení" desc={due > 0 ? 'Čekají na tebe' : 'Nic nečeká'} badge={due} />
           <ModeTile to="trenink" icon="shuffle" title="Volný trénink" desc="Vlastní rozsah a operace" />
-          <ModeTile to="rodice" icon="users" title="Pro rodiče" desc="Přehled a nastavení" />
         </div>
       </section>
+
+      <footer className="home-foot">
+        <a href={href('rodice')} className="g92-btn g92-btn--ghost home-foot__parents">
+          <Icon name="users" size={22} /> Pro rodiče <span className="home-foot__sub g92-muted font-medium">· přehled a nastavení</span>
+        </a>
+      </footer>
     </div>
   );
 }

@@ -22,19 +22,20 @@ const OP_LABELS: Record<string, string> = { add: 'Sčítání', sub: 'Odčítán
 /** Hold-to-open gate: easy for adults, unlikely to be triggered by a small child by accident. */
 function ParentGate({ onOpen }: { onOpen: () => void }) {
   const [p, setP] = useState(0);
+  const [tooShort, setTooShort] = useState(false);
   const raf = useRef(0);
   const start = useRef(0);
-  const HOLD = 1600;
-  const stop = () => {
-    cancelAnimationFrame(raf.current);
-    setP(0);
-  };
-  const begin = (e: React.PointerEvent) => {
-    e.preventDefault();
+  const holding = useRef(false);
+  const HOLD = 2500;
+  const begin = () => {
+    if (holding.current) return;
+    holding.current = true;
+    setTooShort(false);
     start.current = performance.now();
     const tick = () => {
       const v = (performance.now() - start.current) / HOLD;
       if (v >= 1) {
+        holding.current = false;
         setP(1);
         sfx.pop();
         onOpen();
@@ -45,29 +46,53 @@ function ParentGate({ onOpen }: { onOpen: () => void }) {
     };
     raf.current = requestAnimationFrame(tick);
   };
+  const stop = () => {
+    if (!holding.current) return;
+    holding.current = false;
+    cancelAnimationFrame(raf.current);
+    setP(0);
+    setTooShort(true);
+  };
   useEffect(() => () => cancelAnimationFrame(raf.current), []);
+  const isHoldKey = (e: React.KeyboardEvent) => e.key === ' ' || e.key === 'Enter';
   return (
     <div className="g92-empty parent-gate">
       <Icon name="users" size={56} className="text-accent-text" />
       <h2 className="text-2xl font-black">Pro rodiče</h2>
-      <p className="g92-muted">Přehled pokroku a nastavení. Pro otevření podržte tlačítko.</p>
+      <p className="g92-muted">Přehled pokroku a nastavení. Pro otevření podržte tlačítko, dokud se celé nenaplní.</p>
       <button
         type="button"
         className="g92-btn g92-btn--lg hold-btn"
         style={{ ['--p' as string]: p }}
-        onPointerDown={begin}
+        onPointerDown={(e) => {
+          e.preventDefault();
+          begin();
+        }}
         onPointerUp={stop}
         onPointerLeave={stop}
         onPointerCancel={stop}
         onContextMenu={(e) => e.preventDefault()}
         onKeyDown={(e) => {
-          if (e.key === 'Enter' && e.shiftKey) onOpen();
+          if (!isHoldKey(e)) return;
+          e.preventDefault();
+          if (!e.repeat) begin();
         }}
-        aria-label="Podržte pro otevření (nebo Shift+Enter)"
+        onKeyUp={(e) => {
+          if (!isHoldKey(e)) return;
+          e.preventDefault();
+          stop();
+        }}
+        onBlur={() => {
+          if (holding.current) stop();
+        }}
+        aria-describedby="parent-gate-hint"
       >
         <span className="hold-btn__fill" aria-hidden="true" />
         <span className="relative">Podržte pro otevření</span>
       </button>
+      <p id="parent-gate-hint" className={`parent-gate__hint ${tooShort ? 'is-warn' : ''}`} aria-live="polite">
+        {tooShort ? 'Držte déle – dokud se tlačítko celé nenaplní (asi 3 vteřiny).' : <span className="parent-gate__keys">Na klávesnici podržte mezerník nebo Enter.</span>}
+      </p>
     </div>
   );
 }

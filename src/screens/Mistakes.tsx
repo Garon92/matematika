@@ -36,7 +36,7 @@ export function Mistakes() {
             </p>
             <p className="g92-muted">Příklady, které minule nevyšly. Když je dáš správně, vrátí se později – až je budeš umět nazpaměť.</p>
           </div>
-          <button type="button" className="g92-btn g92-btn--xl" onClick={() => navigate('chyby/hrat')} autoFocus>
+          <button type="button" className="g92-btn g92-btn--xl" onClick={() => navigate('chyby/hrat')}>
             <Icon name="play" size={26} /> Procvičit
           </button>
         </div>
@@ -59,7 +59,7 @@ export function Mistakes() {
               return (
                 <li key={c.key} className={`mistake ${c.due <= t ? 'is-due' : ''}`}>
                   <div className="min-w-0 flex-1">
-                    <p className="mistake__q tabular-nums">{c.due <= t ? questionText(c.task, prefs.notation) : solvedText(c.task, prefs.notation)}</p>
+                    <p className="mistake__q tabular-nums">{c.due <= t && c.task.kind !== 'count' ? questionText(c.task, prefs.notation) : solvedText(c.task, prefs.notation)}</p>
                     <p className="mistake__meta">
                       {lvl ? lvl.title : 'Závod / trénink'} · chyb: {c.wrongs} · {dueLabel(c.due, t)}
                     </p>

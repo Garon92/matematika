@@ -5,6 +5,7 @@ import { wordProblem, qty, be, ITEMS, nbsp } from '../words';
 describe('typography', () => {
   it('keeps one-letter prepositions and numbers with the next word', () => {
     expect(nbsp('V každém sáčku je 9 autíček a k tomu 2 míčky')).toBe('V\u00A0každém sáčku je 9\u00A0autíček a\u00A0k\u00A0tomu 2\u00A0míčky');
+    expect(nbsp('a k v lese i u nás')).toBe('a\u00A0k\u00A0v\u00A0lese i\u00A0u\u00A0nás');
   });
 });
 
