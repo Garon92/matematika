@@ -314,7 +314,7 @@ function Overview() {
           Nastavení
         </h2>
         <PrefsForm full />
-        <p className="g92-hint mt-3">Zvuk, motiv (světlý/tmavý) a jméno dítěte najdete v nastavení v horní liště (ikona posuvníků).</p>
+        <p className="g92-hint mt-3">Zvuk a motiv (světlý/tmavý) najdete v nastavení v horní liště (ikona posuvníků), jména dětí výše v sekci Děti.</p>
       </section>
 
       <section className="g92-card" aria-labelledby="h-data">

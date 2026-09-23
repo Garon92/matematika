@@ -16,8 +16,8 @@ export function PrefsForm({ full = false }: { full?: boolean }) {
           value={p.notation}
           onChange={(v) => setPrefs({ notation: v })}
           options={[
-            { value: 'school', label: '3 · 4   12 : 3', title: 'Jako ve škole' },
-            { value: 'intl', label: '3 × 4   12 ÷ 3' },
+            { value: 'school', label: '· a : (jako ve škole)', title: '3 · 4 a 12 : 3' },
+            { value: 'intl', label: '× a ÷', title: '3 × 4 a 12 ÷ 3' },
           ]}
         />
       </div>
@@ -60,7 +60,7 @@ export function PrefsForm({ full = false }: { full?: boolean }) {
             <Segmented block label="Délka cvičení" value={p.sessionLength} onChange={(v) => setPrefs({ sessionLength: v })} options={[5, 10, 15, 20].map((n) => ({ value: n, label: String(n) }))} />
           </div>
           <div className="g92-field">
-            <span className="g92-label">Denní cíl (správně vyřešených)</span>
+            <span className="g92-label">Denní cíl (příkladů za den)</span>
             <Segmented block label="Denní cíl" value={p.dailyGoal} onChange={(v) => setPrefs({ dailyGoal: v })} options={[10, 20, 30, 50].map((n) => ({ value: n, label: String(n) }))} />
           </div>
           <div className="g92-field">
