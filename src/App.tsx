@@ -5,7 +5,7 @@ import { Ladder } from './screens/Ladder';
 import { Session } from './screens/Session';
 import { NotFound } from './screens/NotFound';
 import { AppSettings } from './screens/AppSettings';
-import { openSettingsWithExtra } from './ui/reactDialog';
+import { openReactSettingsDialog } from './kit/react/dialog';
 import { ErrorBoundary } from './ui/ErrorBoundary';
 import { iconSvg } from './ui/Icon';
 import { reportActivity } from './state/store';
@@ -113,7 +113,7 @@ export function App() {
         help
         ong92-settings={(e: CustomEvent) => {
           e.preventDefault();
-          openSettingsWithExtra(<AppSettings />);
+          openReactSettingsDialog(<AppSettings />);
         }}
       />
       <main id="main" className="app-main">

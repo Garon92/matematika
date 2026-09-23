@@ -108,9 +108,8 @@ export function Session({ source }: { source: SessionSource }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && !document.querySelector('dialog[open]')) {
-        // keep the key from immediately cancelling the confirm dialog we are about to open
         e.preventDefault();
-        window.setTimeout(() => void leave(), 0);
+        void leave(); // kit ≥ 0.6 defers dialogs opened from keydown, so Esc doesn't cancel the confirm
       }
     };
     window.addEventListener('keydown', onKey);

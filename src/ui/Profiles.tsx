@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { confirmDialog, sfx, toast } from '../kit';
 import { activeProfileId, addProfile, AVATARS, MAIN, profiles, removeProfile, switchProfile, updateProfile, type Profile } from '../state/profiles';
 import { useSettings } from '../state/store';
-import { openReactDialog } from './reactDialog';
+import { openReactDialog } from '../kit/react/dialog';
 import { Icon } from './Icon';
 
 function displayName(p: Profile): string {
